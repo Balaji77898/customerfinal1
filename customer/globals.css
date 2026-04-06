@@ -1,0 +1,194 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* Tailwind theme variables */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* ✅ Correct font variables */
+  --font-sans: var(--font-jakarta);
+  --font-heading: var(--font-playfair);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* ✅ Default body font */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-jakarta), sans-serif;
+}
+
+/* ✅ Heading font (premium look) */
+.font-heading {
+  font-family: var(--font-playfair), serif;
+}
+
+/* ✅ Body/UI font */
+.font-body {
+  font-family: var(--font-jakarta), sans-serif;
+}
+
+/* ✨ Animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeUp {
+  animation: fadeUp 0.8s ease-out forwards;
+}
+.font-body {
+  font-family: var(--font-jakarta);
+}
+
+.font-heading {
+  font-family: var(--font-cursive);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeUp {
+  animation: fadeUp 0.9s ease-out forwards;
+}
+:root {
+  --bg-card: rgba(255, 255, 255, 0.95);
+}
+
+.dark {
+  --bg-card: rgba(20, 20, 20, 0.95);
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.5s ease-out;
+}
+/* ROYAL MEDIUM MAROON NEON WELCOME */
+.welcome-neon {
+  font-family: "Playfair Display", serif; /* royal serif */
+  font-size: 88px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+
+  background: linear-gradient(
+    90deg,
+    #5A0F14,   /* royal maroon */
+    #7A1C1F,   /* warm wine */
+    #9C2A2D    /* soft ruby */
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 6px rgba(122, 28, 31, 0.45),
+    0 0 14px rgba(122, 28, 31, 0.35),
+    0 0 28px rgba(156, 42, 45, 0.45);
+
+  animation: royalNeonPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes royalNeonPulse {
+  from {
+    text-shadow:
+      0 0 4px rgba(122, 28, 31, 0.3),
+      0 0 10px rgba(122, 28, 31, 0.25),
+      0 0 18px rgba(156, 42, 45, 0.3);
+  }
+  to {
+    text-shadow:
+      0 0 10px rgba(156, 42, 45, 0.6),
+      0 0 22px rgba(156, 42, 45, 0.5),
+      0 0 40px rgba(156, 42, 45, 0.55);
+  }
+}
+
+/* ROYAL MEDIUM MAROON NEON FOR DETAILS PAGE */
+/* ROYAL MENU HEADING GLOW */
+.menu-neon {
+  font-family: "Playfair Display", serif;
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 1;
+
+  background: linear-gradient(
+    90deg,
+    #5A0F14,
+    #7A1C1F,
+    #9C2A2D
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  text-shadow:
+    0 0 4px rgba(122, 28, 31, 0.35),
+    0 0 10px rgba(122, 28, 31, 0.3),
+    0 0 18px rgba(156, 42, 45, 0.35);
+
+  animation: menuGlow 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes menuGlow {
+  from {
+    text-shadow:
+      0 0 3px rgba(122, 28, 31, 0.25),
+      0 0 8px rgba(122, 28, 31, 0.2),
+      0 0 14px rgba(156, 42, 45, 0.25);
+  }
+  to {
+    text-shadow:
+      0 0 8px rgba(156, 42, 45, 0.5),
+      0 0 18px rgba(156, 42, 45, 0.45),
+      0 0 30px rgba(156, 42, 45, 0.5);
+  }
+}
