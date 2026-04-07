@@ -11,7 +11,7 @@ interface FoodItem {
 interface Category { id: string; name: string; description: string; items: FoodItem[]; }
 interface CartItem extends FoodItem { qty: number; parcel: boolean; notes: string; }
 
-const BASE_URL = "https://pos-backend-s380.onrender.com";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 
 export default function MenuPage() {
   const router = useRouter();

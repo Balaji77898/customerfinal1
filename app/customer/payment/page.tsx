@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const BASE_URL = "https://pos-backend-s380.onrender.com";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 const PARCEL_CHARGE = 20;
 
 export default function PaymentPage() {

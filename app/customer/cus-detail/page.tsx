@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-const API_URL = "https://pos-backend-s380.onrender.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 
 const SLIDES = [
   "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=1200&q=90&auto=format&fit=crop",
