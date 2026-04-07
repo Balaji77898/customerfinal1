@@ -1,6 +1,6 @@
 "use client";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
 
 const API_URL = "https://pos-backend-s380.onrender.com";
 
@@ -65,12 +65,13 @@ const IconMapPin = ({ size = 20, ...p }) => (
 );
 
 /* ── Canvas particle effect ── */
-function useParticles(canvasRef) {
+function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
     const ctx = cv.getContext("2d");
-    let W, H, raf;
+    if (!ctx) return;
+    let W: number, H: number, raf: number;
     const resize = () => { W = cv.width = cv.offsetWidth; H = cv.height = cv.offsetHeight; };
     resize();
     window.addEventListener("resize", resize, { passive: true });
@@ -101,20 +102,20 @@ function useParticles(canvasRef) {
     };
     draw();
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
-  }, []);
+  }, [canvasRef]);
 }
 
 export default function CustomerDetails() {
   const router = useRouter();
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   useParticles(canvasRef);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [qrToken, setQrToken] = useState(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [focused, setFocused] = useState(null);
+  const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
   const [slideIdx, setSlideIdx] = useState(0);
   const [entered, setEntered] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: -300, y: -300 });
@@ -128,12 +129,12 @@ export default function CustomerDetails() {
     setTimeout(() => setEntered(true), 80);
 
     const iv = setInterval(() => setSlideIdx(p => (p + 1) % SLIDES.length), 5000);
-    const onMove = e => setCursorPos({ x: e.clientX, y: e.clientY });
+    const onMove = (e: MouseEvent) => setCursorPos({ x: e.clientX, y: e.clientY });
     window.addEventListener("mousemove", onMove);
     return () => { clearInterval(iv); window.removeEventListener("mousemove", onMove); };
   }, []);
 
-  const showToast = (msg, type = "error") => {
+  const showToast = (msg: string, type = "error") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
@@ -169,7 +170,7 @@ export default function CustomerDetails() {
 
       showToast("Welcome! Entering your royal experience…", "success");
       setTimeout(() => router.push("/customer/menu"), 1500);
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || "Server error. Try again.");
       setLoading(false);
     }

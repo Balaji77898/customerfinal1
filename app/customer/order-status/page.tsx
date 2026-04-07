@@ -123,7 +123,7 @@ export default function OrderStatusPage() {
             name:        i.item_name ?? i.name ?? i.menu_item_name ?? "Item",
             quantity:    i.quantity   ?? i.qty  ?? 1,
             price:       Number(i.price    ?? 0),
-            total_price: Number(i.subtotal ?? i.total_price ?? (i.price * (i.quantity || 1)) ?? 0),
+            total_price: Number((i.subtotal ?? i.total_price ?? (i.price * (i.quantity || 1))) || 0),
           })),
           subtotal: Number(order.subtotal     ?? order.sub_total   ?? 0),
           gst:      Number(order.tax_amount   ?? order.gst_amount  ?? 0),

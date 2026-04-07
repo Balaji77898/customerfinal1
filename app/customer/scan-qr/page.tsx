@@ -59,18 +59,18 @@ const STRIP_IMGS = [
 ];
 
 /* ─── Scroll reveal ─── */
-function useReveal(t=0.08){
-  const ref=useRef(null);const [vis,setVis]=useState(false);
+function useReveal(t=0.08): [React.RefObject<HTMLElement | null>, boolean] {
+  const ref=useRef<HTMLElement | null>(null);const [vis,setVis]=useState(false);
   useEffect(()=>{
     const el=ref.current;if(!el||vis)return;
     const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting){setVis(true);obs.disconnect();}},{threshold:t});
     obs.observe(el);return()=>obs.disconnect();
   });
-  return[ref,vis];
+  return [ref, vis] as [React.RefObject<HTMLElement | null>, boolean];
 }
 
 /* ─── Reveal div ─── */
-function Reveal({children,vis,delay=0,style={}}){
+function Reveal({children,vis,delay=0,style={}}: {children:React.ReactNode; vis:boolean; delay?:number; style?:React.CSSProperties}){
   return(
     <div style={{opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(26px)",transition:`opacity .7s ease ${delay}s,transform .7s ease ${delay}s`,...style}}>
       {children}
@@ -140,11 +140,11 @@ export default function SpiceDelightLight(){
   const [curPos,setCurPos]=useState({x:-300,y:-300});
   const [curBig,setCurBig]=useState(false);
   const [mobOpen,setMobOpen]=useState(false);
-  const [tableInfo,setTableInfo]=useState(null);
+  const [tableInfo,setTableInfo]=useState<{token?: string | null, table?: string | null} | null>(null);
 
-  const canvasRef=useRef(null);
-  const pxWrapRef=useRef(null);
-  const pxImgRef=useRef(null);
+  const canvasRef=useRef<HTMLCanvasElement | null>(null);
+  const pxWrapRef=useRef<HTMLDivElement | null>(null);
+  const pxImgRef=useRef<HTMLImageElement | null>(null);
 
   const [aboutRef,aboutVis]=useReveal(0.06);
   const [menuRef,menuVis]=useReveal(0.05);
@@ -168,7 +168,7 @@ export default function SpiceDelightLight(){
     const t2=setTimeout(()=>setTitlePhase(2),500);
     const t3=setTimeout(()=>setTitlePhase(3),800);
     const onS=()=>setScrollY(window.scrollY);
-    const onM=e=>setCurPos({x:e.clientX,y:e.clientY});
+    const onM=(e:MouseEvent)=>setCurPos({x:e.clientX,y:e.clientY});
     window.addEventListener("scroll",onS,{passive:true});
     window.addEventListener("mousemove",onM);
     const iv1=setInterval(()=>{
@@ -198,7 +198,8 @@ export default function SpiceDelightLight(){
   useEffect(()=>{
     const cv=canvasRef.current;if(!cv)return;
     const ctx=cv.getContext("2d");
-    let W,H,raf;
+    if(!ctx)return;
+    let W:number,H:number,raf:number;
     const rs=()=>{W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;};
     rs();window.addEventListener("resize",rs,{passive:true});
     const COLS=["rgba(255,107,0,A)","rgba(200,0,26,A)","rgba(255,183,0,A)","rgba(255,60,0,A)"];
@@ -225,7 +226,7 @@ export default function SpiceDelightLight(){
     return()=>{cancelAnimationFrame(raf);window.removeEventListener("resize",rs);};
   },[]);
 
-  const scrollTo=id=>document.getElementById(id)?.scrollIntoView({behavior:"smooth"});
+  const scrollTo=(id:string)=>document.getElementById(id)?.scrollIntoView({behavior:"smooth"});
   const ih=()=>setCurBig(true),il=()=>setCurBig(false);
 
   if(loading)return <Loader/>;
@@ -400,7 +401,7 @@ export default function SpiceDelightLight(){
               [<IFlame key="ff" s={20}/>,"Live Tandoor","Clay oven fires all day for smoky char."],
               [<IPin key="p" s={20}/>,"MG Road","Heart of Bangalore's dining district."],
             ].map(([ic,t,d])=>(
-              <div key={t} className="af" onMouseEnter={ih} onMouseLeave={il}>
+              <div key={String(t)} className="af" onMouseEnter={ih} onMouseLeave={il}>
                 <div className="aficon">{ic}</div>
                 <div><div className="aft">{t}</div><div className="afd">{d}</div></div>
               </div>
@@ -526,7 +527,7 @@ export default function SpiceDelightLight(){
             [<IChef key="c" s={18}/>,"Type","North Indian · Café · Dine-In & Takeaway"],
             [<IClock key="cl" s={18}/>,"Hours","Open 7 days · 10 AM – 11 PM"],
           ].map(([ic,l,v])=>(
-            <div key={l} className="crow">
+            <div key={String(l)} className="crow">
               <div className="cicon">{ic}</div>
               <div><div className="clbl">{l}</div><div className="cval">{v}</div></div>
             </div>
