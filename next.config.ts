@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
         hostname: "th.bing.com",
         pathname: "/**",
       },
+
+      // ✅ ADD THIS
+      {
+        protocol: "https",
+        hostname: "cdn.uengage.io",
+        pathname: "/**",
+      },
     ],
   },
 };
