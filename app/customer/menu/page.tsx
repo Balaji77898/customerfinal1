@@ -31,6 +31,7 @@ export default function MenuPage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer   = useRef<IntersectionObserver | null>(null);
 
+  // Derived session key from state (used for reads only)
   const sessionKey = useMemo(() =>
     customerName && tableNumber ? `currentCart_${tableNumber}_${customerName}` : ""
   , [customerName, tableNumber]);
@@ -41,7 +42,6 @@ export default function MenuPage() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  // FIX: Added filteredItems as dependency so observer re-runs when items change
   useEffect(() => {
     observer.current?.disconnect();
     observer.current = new IntersectionObserver(entries => {
@@ -54,12 +54,14 @@ export default function MenuPage() {
     }, { threshold: 0.05, rootMargin: "0px 0px -20px 0px" });
     cardRefs.current.forEach(el => observer.current?.observe(el));
     return () => observer.current?.disconnect();
-  }, [categories, selectedCat, search]); // FIX: proper dependencies
+  }, [categories, selectedCat, search]);
 
+  // Load customer info & cart from localStorage
   useEffect(() => {
     const name  = localStorage.getItem("customerName")  || "Guest";
     const table = localStorage.getItem("tableNumber")   || "";
-    setCustomerName(name); setTableNumber(table);
+    setCustomerName(name);
+    setTableNumber(table);
     if (name && table) {
       const s = localStorage.getItem(`currentCart_${table}_${name}`);
       if (s) {
@@ -68,6 +70,7 @@ export default function MenuPage() {
     }
   }, []);
 
+  // Fetch menu from backend
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -86,32 +89,24 @@ export default function MenuPage() {
         });
 
         const json = await res.json();
-
-        // DEBUG: log raw response so you can verify the exact shape
         console.log("🍽️ Menu API raw response:", JSON.stringify(json, null, 2));
 
         if (!res.ok || !json.success) {
           throw new Error(json?.message || `Server error: ${res.status}`);
         }
 
-        // FIX: Try every possible key the backend might use
         const cats: Category[] =
-          json.data?.categories ??   // { success, data: { categories: [...] } }
-          json.data?.menu ??         // { success, data: { menu: [...] } }
-          json.data?.items ??        // { success, data: { items: [...] } }
-          (Array.isArray(json.data) ? json.data : null) ?? // { success, data: [...] }
-          json.categories ??         // { success, categories: [...] }
-          json.menu ??               // { success, menu: [...] }
+          json.data?.categories ??
+          json.data?.menu ??
+          json.data?.items ??
+          (Array.isArray(json.data) ? json.data : null) ??
+          json.categories ??
+          json.menu ??
           [];
 
         console.log(`✅ Parsed ${cats.length} categories`, cats);
-
-        if (cats.length === 0) {
-          console.warn("⚠️ No categories found. Check the API response shape above.");
-        }
-
         setCategories(cats);
-        setSelectedCat("All"); // FIX: always start on "All", not first category
+        setSelectedCat("All");
         setError("");
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Unable to load menu.";
@@ -123,9 +118,39 @@ export default function MenuPage() {
     })();
   }, []);
 
+  // ─── FIXED: Read directly from localStorage so the write never gets skipped ───
   const saveCart = (u: CartItem[]) => {
     setCart(u);
-    if (sessionKey) localStorage.setItem(sessionKey, JSON.stringify(u));
+    const name  = localStorage.getItem("customerName")  || "";
+    const table = localStorage.getItem("tableNumber")   || "";
+    if (name && table) {
+      localStorage.setItem(`currentCart_${table}_${name}`, JSON.stringify(u));
+    }
+  };
+
+  // ─── Sync cart to backend ───
+  const syncCartToBackend = async (items: CartItem[]) => {
+    const token = localStorage.getItem("customerJWT");
+    if (!token) return;
+    try {
+      await fetch(`${BASE_URL}/api/customer/cart`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: items.map(i => ({
+            item_id: i.id,
+            qty: i.qty,
+            parcel: i.parcel,
+            notes: i.notes,
+          })),
+        }),
+      });
+    } catch (err) {
+      console.warn("Cart sync failed (non-critical):", err);
+    }
   };
 
   const addItem = (item: FoodItem) => {
@@ -133,11 +158,15 @@ export default function MenuPage() {
     if (i >= 0) u[i].qty += 1;
     else u.push({ ...item, image_url: item.image_url || null, qty: 1, parcel: false, notes: "" });
     saveCart(u);
+    syncCartToBackend(u);
     showToast(`${item.name} added`);
   };
 
-  const removeItem = (id: string) =>
-    saveCart(cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0));
+  const removeItem = (id: string) => {
+    const u = cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0);
+    saveCart(u);
+    syncCartToBackend(u);
+  };
 
   const getQty   = (id: string) => cart.find(i => i.id === id)?.qty || 0;
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
@@ -164,7 +193,7 @@ export default function MenuPage() {
   const regCard = (id: string, el: HTMLDivElement | null) => {
     if (el) {
       cardRefs.current.set(id, el);
-      observer.current?.observe(el); // FIX: observe immediately when card mounts
+      observer.current?.observe(el);
     } else {
       cardRefs.current.delete(id);
     }
@@ -450,14 +479,6 @@ export default function MenuPage() {
         }
         .toast.on { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
 
-        /* Debug banner */
-        .debug-banner {
-          background:rgba(200,169,81,.12); border:1px solid rgba(200,169,81,.3);
-          border-radius:10px; padding:12px 16px; margin:16px 0;
-          font-family:var(--sans); font-size:12px; color:var(--c);
-        }
-        .debug-banner strong { display:block; margin-bottom:4px; font-size:13px; }
-
         @keyframes spin { to{transform:rotate(360deg);} }
         .spin {
           width:40px; height:40px; border-radius:50%;
@@ -537,14 +558,6 @@ export default function MenuPage() {
           )}
 
           {!loading && !error && (<>
-
-            {/* Debug info — remove this block once menu loads correctly */}
-            {categories.length === 0 && (
-              <div className="debug-banner">
-                <strong>⚠️ Menu loaded but 0 categories found</strong>
-                Open browser DevTools → Console and look for <code>🍽️ Menu API raw response</code> to see the exact data shape returned by the backend. Share that shape and the extraction line can be fixed precisely.
-              </div>
-            )}
 
             {allItems.length > 0 && (
               <div style={{ marginTop:22, marginBottom:26 }}>
