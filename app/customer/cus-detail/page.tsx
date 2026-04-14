@@ -139,7 +139,6 @@ export default function CustomerDetails() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  /* ── Updated Submit: new base URL + response structure res.data ── */
   const handleSubmit = async () => {
     const trimName = name.trim();
     const trimMobile = mobile.trim();
@@ -156,21 +155,30 @@ export default function CustomerDetails() {
       });
       const res = await response.json();
 
-      // Handle both new {success, data} and legacy flat structure
+      console.log("🔐 Login API response:", JSON.stringify(res, null, 2));
+
       if (!response.ok) throw new Error(res?.message || "Login failed");
       if (!res.success) throw new Error(res?.message || "Login failed");
 
-      const data = res.data ?? res; // use res.data if present, else fall back
+      // ── NEW response shape: { success, token, customer, table: { id, table_number } }
+      // ── Also handle legacy shape: { success, data: { token, tableNumber, ... } }
+      const token       = res.token       ?? res.data?.token;
+      const customerId  = res.customer?.id ?? res.data?.customerId;
+      // Use table.table_number from new shape; fall back to legacy data.tableNumber
+      const tableNumber = res.table?.table_number ?? res.data?.tableNumber ?? res.data?.table?.table_number;
 
-      if (data?.token)       localStorage.setItem("customerJWT",    data.token);
-      if (data?.customerId)  localStorage.setItem("customerId",     data.customerId.toString());
-      if (data?.tableNumber) localStorage.setItem("tableNumber",    data.tableNumber.toString());
+      console.log("✅ Parsed — token:", token, "| tableNumber:", tableNumber, "| customerId:", customerId);
+
+      if (token)       localStorage.setItem("customerJWT",    token);
+      if (customerId)  localStorage.setItem("customerId",     String(customerId));
+      if (tableNumber) localStorage.setItem("tableNumber",    String(tableNumber));
       localStorage.setItem("customerName",   trimName);
       localStorage.setItem("customerMobile", trimMobile);
 
       showToast("Welcome! Entering your royal experience…", "success");
       setTimeout(() => router.push("/customer/menu"), 1500);
     } catch (err: any) {
+      console.error("❌ Login error:", err);
       showToast(err?.message || "Server error. Try again.");
       setLoading(false);
     }
