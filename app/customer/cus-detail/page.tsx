@@ -24,7 +24,7 @@ const IMap   = ({s=13,...p}: {s?:number,[k:string]:any}) => <svg width={s} heigh
 const IDiamond=({s=10,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M19 3H5L2 9l10 12L22 9l-3-6zm-8.5 0h5L17 7H7l1.5-4zm-5.06 6h3.56l2 8-5.56-8zM12 18l-2.5-9h5L12 18zm3.5-1l2-8h3.56l-5.56 8z"/></svg>;
 
 /* ── Cinematic Particle Canvas ── */
-function ParticleCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement> }) {
+function ParticleCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   useEffect(() => {
     const cv = canvasRef.current; if (!cv) return;
     const ctx = cv.getContext("2d"); if (!ctx) return;
@@ -78,7 +78,7 @@ export default function CustomerDetails() {
   const [mobile, setMobile] = useState("");
   const [qrToken, setQrToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<{msg:string,type:string} | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
   const [slideIdx, setSlideIdx] = useState(0);
   const [prevIdx, setPrevIdx] = useState(SLIDES.length - 1);
@@ -155,6 +155,7 @@ export default function CustomerDetails() {
           <canvas ref={canvasRef} className="cv" />
           <ParticleCanvas canvasRef={canvasRef} />
 
+          {/* Live badge */}
           <div className="live-badge">
             <span className="live-dot" />
             <span>Open Now</span>
@@ -162,12 +163,14 @@ export default function CustomerDetails() {
             <span>200+ Orders Today</span>
           </div>
 
+          {/* Slide counter */}
           <div className="hcounter">
             <span className="hc-cur">{String(slideIdx + 1).padStart(2, "0")}</span>
             <span className="hc-sep" />
             <span className="hc-tot">{String(SLIDES.length).padStart(2, "0")}</span>
           </div>
 
+          {/* Brand — desktop */}
           <div className="brand-panel">
             <div className="logo-ring">
               <div className="logo-inner"><IFlame s={22} /></div>
@@ -204,6 +207,7 @@ export default function CustomerDetails() {
             </div>
           </div>
 
+          {/* Mobile brand strip */}
           <div className="mob-brand">
             <div className="mob-logo"><IFlame s={15} /></div>
             <div className="mob-info">
@@ -212,6 +216,7 @@ export default function CustomerDetails() {
             </div>
           </div>
 
+          {/* Slide dots */}
           <div className="hsdots">
             {SLIDES.map((_, i) => (
               <button key={i} className={`hsdot${i === slideIdx ? " on" : ""}`}
@@ -257,6 +262,7 @@ export default function CustomerDetails() {
 
             <div className="fields">
 
+              {/* Name */}
               <div className="field-group">
                 <label className="field-lbl">Full Name</label>
                 <div className={`field-box${focused === "name" ? " focus" : ""}${nameTouched && nameValid ? " valid" : ""}${nameTouched && !nameValid ? " err" : ""}`}>
@@ -272,6 +278,7 @@ export default function CustomerDetails() {
                 </div>
               </div>
 
+              {/* Mobile */}
               <div className="field-group">
                 <label className="field-lbl">Mobile Number</label>
                 <div className={`field-box${focused === "mobile" ? " focus" : ""}${mobileTouched && mobileValid ? " valid" : ""}${mobileTouched && !mobileValid ? " err" : ""}`}>
@@ -342,6 +349,9 @@ export default function CustomerDetails() {
   );
 }
 
+/* ══════════════════════════════════════════════════════
+   CSS — Crimson / Saffron / Gold / Cream palette
+══════════════════════════════════════════════════════ */
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600;700&display=swap');
 
