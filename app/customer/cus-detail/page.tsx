@@ -12,26 +12,25 @@ const SLIDES = [
 ];
 
 /* ── SVG Icons ── */
-const IUser  = ({s=18,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>;
-const IPhone = ({s=18,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>;
-const IArrow = ({s=18,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
-const ICheck = ({s=13,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...p}><polyline points="20 6 9 17 4 12"/></svg>;
-const IStar  = ({s=13,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>;
-const IFlame = ({s=20,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32-2.59 2.11-3.66 5.65-2.7 8.87.06.22.12.44.12.67 0 .44-.36.82-.8.82-.42 0-.72-.27-.83-.65-.03-.1-.06-.2-.08-.31-1.14 1.6-1.33 3.75-.55 5.56.53 1.22 1.39 2.28 2.45 3.04.98.71 2.09 1.21 3.26 1.41.33.06.66.1.99.1 1.23.04 2.44-.26 3.47-.86 2.01-1.14 3.36-3.28 3.36-5.68 0-1.32-.43-2.57-1.14-3.6z"/></svg>;
-const IShield= ({s=13,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>;
-const IClock = ({s=13,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>;
-const IMap   = ({s=13,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>;
-const IDiamond=({s=10,...p}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M19 3H5L2 9l10 12L22 9l-3-6zm-8.5 0h5L17 7H7l1.5-4zm-5.06 6h3.56l2 8-5.56-8zM12 18l-2.5-9h5L12 18zm3.5-1l2-8h3.56l-5.56 8z"/></svg>;
+const IUser  = ({s=18,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>;
+const IPhone = ({s=18,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>;
+const IArrow = ({s=18,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...p}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+const ICheck = ({s=13,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...p}><polyline points="20 6 9 17 4 12"/></svg>;
+const IStar  = ({s=13,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>;
+const IFlame = ({s=20,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32-2.59 2.11-3.66 5.65-2.7 8.87.06.22.12.44.12.67 0 .44-.36.82-.8.82-.42 0-.72-.27-.83-.65-.03-.1-.06-.2-.08-.31-1.14 1.6-1.33 3.75-.55 5.56.53 1.22 1.39 2.28 2.45 3.04.98.71 2.09 1.21 3.26 1.41.33.06.66.1.99.1 1.23.04 2.44-.26 3.47-.86 2.01-1.14 3.36-3.28 3.36-5.68 0-1.32-.43-2.57-1.14-3.6z"/></svg>;
+const IShield= ({s=13,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>;
+const IClock = ({s=13,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>;
+const IMap   = ({s=13,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>;
+const IDiamond=({s=10,...p}: {s?:number,[k:string]:any}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" {...p}><path d="M19 3H5L2 9l10 12L22 9l-3-6zm-8.5 0h5L17 7H7l1.5-4zm-5.06 6h3.56l2 8-5.56-8zM12 18l-2.5-9h5L12 18zm3.5-1l2-8h3.56l-5.56 8z"/></svg>;
 
 /* ── Cinematic Particle Canvas ── */
-function ParticleCanvas({ canvasRef }) {
+function ParticleCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement> }) {
   useEffect(() => {
     const cv = canvasRef.current; if (!cv) return;
     const ctx = cv.getContext("2d"); if (!ctx) return;
-    let W, H, raf, frame = 0;
+    let W: number, H: number, raf: number, frame = 0;
     const resize = () => { W = cv.width = cv.offsetWidth; H = cv.height = cv.offsetHeight; };
     resize(); window.addEventListener("resize", resize, { passive: true });
-    // Crimson + saffron + gold particles matching the landing page palette
     const pts = Array.from({ length: 28 }, () => ({
       x: Math.random(), y: Math.random(),
       r: .5 + Math.random() * 1.6,
@@ -73,14 +72,14 @@ function ParticleCanvas({ canvasRef }) {
 
 export default function CustomerDetails() {
   const router = useRouter();
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [qrToken, setQrToken] = useState(null);
+  const [qrToken, setQrToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [focused, setFocused] = useState(null);
+  const [toast, setToast] = useState<{msg:string,type:string} | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
   const [slideIdx, setSlideIdx] = useState(0);
   const [prevIdx, setPrevIdx] = useState(SLIDES.length - 1);
   const [mounted, setMounted] = useState(false);
@@ -98,7 +97,7 @@ export default function CustomerDetails() {
     return () => clearInterval(iv);
   }, []);
 
-  const showToast = useCallback((msg, type = "error") => {
+  const showToast = useCallback((msg: string, type = "error") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3800);
   }, []);
@@ -127,7 +126,7 @@ export default function CustomerDetails() {
       localStorage.setItem("customerMobile", trimMobile);
       showToast("Welcome! Entering your experience…", "success");
       setTimeout(() => router.push("/customer/menu"), 1600);
-    } catch (err) {
+    } catch (err: any) {
       showToast(err?.message || "Server error. Try again.");
       setLoading(false);
     }
@@ -150,14 +149,12 @@ export default function CustomerDetails() {
             </div>
           ))}
 
-          {/* Layered overlays */}
           <div className="ov-top" />
           <div className="ov-bot" />
           <div className="ov-vign" />
           <canvas ref={canvasRef} className="cv" />
           <ParticleCanvas canvasRef={canvasRef} />
 
-          {/* Live badge */}
           <div className="live-badge">
             <span className="live-dot" />
             <span>Open Now</span>
@@ -165,14 +162,12 @@ export default function CustomerDetails() {
             <span>200+ Orders Today</span>
           </div>
 
-          {/* Slide counter */}
           <div className="hcounter">
             <span className="hc-cur">{String(slideIdx + 1).padStart(2, "0")}</span>
             <span className="hc-sep" />
             <span className="hc-tot">{String(SLIDES.length).padStart(2, "0")}</span>
           </div>
 
-          {/* Brand — desktop */}
           <div className="brand-panel">
             <div className="logo-ring">
               <div className="logo-inner"><IFlame s={22} /></div>
@@ -184,7 +179,6 @@ export default function CustomerDetails() {
               Bangalore · North Indian Heritage Cuisine
             </div>
 
-            {/* Current dish reveal */}
             <div className="dish-reveal">
               <div className="dish-line" />
               <div className="dish-inner">
@@ -194,7 +188,6 @@ export default function CustomerDetails() {
               </div>
             </div>
 
-            {/* Step indicator */}
             <div className="step-block">
               <div className="step-meta">Guest Details — Step 1 of 2</div>
               <div className="step-track">
@@ -204,7 +197,6 @@ export default function CustomerDetails() {
               </div>
             </div>
 
-            {/* Rating row */}
             <div className="rating-row">
               <div className="stars">{[0,1,2,3,4].map(i => <IStar key={i} s={11} />)}</div>
               <span className="rating-val">4.8</span>
@@ -212,7 +204,6 @@ export default function CustomerDetails() {
             </div>
           </div>
 
-          {/* Mobile brand strip */}
           <div className="mob-brand">
             <div className="mob-logo"><IFlame s={15} /></div>
             <div className="mob-info">
@@ -221,7 +212,6 @@ export default function CustomerDetails() {
             </div>
           </div>
 
-          {/* Slide dots */}
           <div className="hsdots">
             {SLIDES.map((_, i) => (
               <button key={i} className={`hsdot${i === slideIdx ? " on" : ""}`}
@@ -236,7 +226,6 @@ export default function CustomerDetails() {
 
           <div className="form-shell">
 
-            {/* Scan verification pill */}
             <div className={`scan-pill${qrToken ? " verified" : " unverified"}`}>
               <span className={`scan-dot${qrToken ? " ok" : " warn"}`} />
               {qrToken ? (
@@ -246,7 +235,6 @@ export default function CustomerDetails() {
               )}
             </div>
 
-            {/* Restaurant mark — mobile */}
             <div className="form-mark">
               <div className="fm-icon"><IFlame s={16} /></div>
               <div className="fm-text">
@@ -255,24 +243,20 @@ export default function CustomerDetails() {
               </div>
             </div>
 
-            {/* Heading */}
             <div className="form-heading">
               <div className="fh-eyebrow">Welcome, Honoured Guest</div>
               <h1 className="fh-title">Your<br /><em>Details</em></h1>
               <p className="fh-body">Enter your name and mobile to unlock your royal dining experience at Bangalore's finest.</p>
             </div>
 
-            {/* Ornamental divider */}
             <div className="orn-div">
               <div className="od-line" />
               <div className="od-gem"><IDiamond s={8} /></div>
               <div className="od-line" />
             </div>
 
-            {/* Form fields */}
             <div className="fields">
 
-              {/* Name */}
               <div className="field-group">
                 <label className="field-lbl">Full Name</label>
                 <div className={`field-box${focused === "name" ? " focus" : ""}${nameTouched && nameValid ? " valid" : ""}${nameTouched && !nameValid ? " err" : ""}`}>
@@ -288,7 +272,6 @@ export default function CustomerDetails() {
                 </div>
               </div>
 
-              {/* Mobile */}
               <div className="field-group">
                 <label className="field-lbl">Mobile Number</label>
                 <div className={`field-box${focused === "mobile" ? " focus" : ""}${mobileTouched && mobileValid ? " valid" : ""}${mobileTouched && !mobileValid ? " err" : ""}`}>
@@ -309,7 +292,6 @@ export default function CustomerDetails() {
               </div>
             </div>
 
-            {/* CTA */}
             {!loading ? (
               <button className={`cta${bothValid ? " ready" : ""}`} onClick={handleSubmit}>
                 <span className="cta-shine" />
@@ -323,7 +305,6 @@ export default function CustomerDetails() {
               </div>
             )}
 
-            {/* Trust bar */}
             <div className="trust-bar">
               <div className="trust-item"><IShield s={11} /><span>Secure</span></div>
               <div className="trust-sep" />
@@ -332,7 +313,6 @@ export default function CustomerDetails() {
               <div className="trust-item"><IClock s={11} /><span>Open till 11 PM</span></div>
             </div>
 
-            {/* Marquee strip */}
             <div className="form-marquee">
               <div className="fm-track">
                 {[...Array(2)].flatMap((_, li) =>
@@ -348,7 +328,6 @@ export default function CustomerDetails() {
         </main>
       </div>
 
-      {/* Toast */}
       {toast && (
         <div className={`toast${toast.type === "success" ? " t-ok" : " t-err"}`}>
           <div className="toast-ico">
@@ -363,14 +342,9 @@ export default function CustomerDetails() {
   );
 }
 
-/* ══════════════════════════════════════════════════════
-   CSS — Crimson / Saffron / Gold / Cream palette
-   Matches the SpiceDelight landing page exactly
-══════════════════════════════════════════════════════ */
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600;700&display=swap');
 
-/* ── Design tokens — exact match to landing page :root ── */
 .r {
   --white:   #FFFFFF;
   --cream:   #FFFBF2;
@@ -404,14 +378,12 @@ html,body { height:100%; overflow-x:hidden }
 .r.in { opacity:1; transform:none }
 @media(min-width:960px) { .r { flex-direction:row } }
 
-/* ════ LEFT PANEL ════ */
 .lp {
   position:relative; overflow:hidden; background:#2A0606;
   height:260px; flex-shrink:0;
 }
 @media(min-width:960px) { .lp { width:46%; height:100vh; position:sticky; top:0 } }
 
-/* Slides */
 .sl { position:absolute; inset:0; opacity:0; z-index:1; }
 .sl.on  { opacity:1; z-index:2; }
 .sl.out { opacity:0; z-index:1; }
@@ -422,8 +394,6 @@ html,body { height:100%; overflow-x:hidden }
 .sl.on img { transform:scale(1); opacity:1; }
 .sl.out img { opacity:0; }
 
-/* Overlays — matching hero photo overlays */
-/* Overlays — light, matching the hero/landing page brightness */
 .ov-top  { position:absolute; inset:0; z-index:3; pointer-events:none;
   background:linear-gradient(160deg, rgba(16,2,2,.52) 0%, rgba(16,2,2,.22) 42%, transparent 78%) }
 .ov-bot  { position:absolute; inset:0; z-index:3; pointer-events:none;
@@ -432,7 +402,6 @@ html,body { height:100%; overflow-x:hidden }
   background:radial-gradient(ellipse at center, transparent 40%, rgba(10,2,2,.28) 100%) }
 .cv { position:absolute; inset:0; z-index:4; pointer-events:none; opacity:.35 }
 
-/* Live badge */
 .live-badge {
   position:absolute; top:18px; left:18px; z-index:10;
   display:flex; align-items:center; gap:7px;
@@ -449,7 +418,6 @@ html,body { height:100%; overflow-x:hidden }
 @keyframes lPulse { 0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.5)} 60%{box-shadow:0 0 0 5px rgba(74,222,128,0)} }
 .live-sep { width:1px; height:10px; background:rgba(200,0,26,.25) }
 
-/* Slide counter — matching .hcounter */
 .hcounter {
   position:absolute; top:22px; right:18px; z-index:10;
   display:flex; align-items:baseline; gap:8px;
@@ -458,7 +426,6 @@ html,body { height:100%; overflow-x:hidden }
 .hc-sep { width:22px; height:1px; background:rgba(255,255,255,.2); margin-bottom:7px }
 .hc-tot { font-size:10px; color:rgba(255,255,255,.25); font-weight:500; letter-spacing:1.5px }
 
-/* Brand panel — desktop */
 .brand-panel {
   display:none;
   position:absolute; inset:0; z-index:5;
@@ -540,7 +507,6 @@ html,body { height:100%; overflow-x:hidden }
 .rating-val { font-size:12px; font-weight:600; color:rgba(255,255,255,.45) }
 .rating-cnt { font-size:11px; color:rgba(255,255,255,.2) }
 
-/* Mobile brand */
 .mob-brand {
   position:absolute; bottom:0; left:0; right:0; z-index:6;
   display:flex; align-items:center; gap:11px; padding:14px 18px;
@@ -555,7 +521,6 @@ html,body { height:100%; overflow-x:hidden }
 .mob-info strong { display:block; font-family:'Cormorant Garamond',serif; font-size:17px; color:#fff; font-weight:600; line-height:1.1 }
 .mob-info span { font-size:9px; color:rgba(255,255,255,.3); display:block; margin-top:2px; letter-spacing:.5px }
 
-/* Slide dots — matching .hsdots */
 .hsdots { position:absolute; bottom:16px; left:18px; z-index:10; display:flex; gap:6px }
 @media(min-width:960px) { .hsdots { bottom:22px; left:auto; right:20px } }
 .hsdot {
@@ -565,7 +530,6 @@ html,body { height:100%; overflow-x:hidden }
 }
 .hsdot.on { background:#fff; width:22px; border-radius:3px; border-color:transparent; }
 
-/* ════ RIGHT PANEL ════ */
 .rp {
   flex:1; position:relative; overflow:hidden;
   display:flex; align-items:flex-start; justify-content:center;
@@ -574,7 +538,6 @@ html,body { height:100%; overflow-x:hidden }
 }
 @media(min-width:960px) { .rp { align-items:center; padding:clamp(48px,6vw,80px) clamp(32px,5vw,64px) } }
 
-/* Ambient — matching .hcont::before gradient mood */
 .rp-ambient {
   position:absolute; inset:0; pointer-events:none; z-index:0;
   background:
@@ -583,14 +546,12 @@ html,body { height:100%; overflow-x:hidden }
     repeating-linear-gradient(60deg, transparent, transparent 40px, rgba(200,0,26,.012) 40px, rgba(200,0,26,.012) 80px);
 }
 
-/* Form shell */
 .form-shell {
   width:100%; max-width:430px; position:relative; z-index:1;
   animation:shellIn .8s cubic-bezier(.16,1,.3,1) .05s both;
 }
 @keyframes shellIn { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none} }
 
-/* Scan pill */
 .scan-pill {
   display:inline-flex; align-items:center; gap:6px;
   padding:5px 13px; border-radius:2px; margin-bottom:20px;
@@ -603,7 +564,6 @@ html,body { height:100%; overflow-x:hidden }
 .scan-dot.ok { background:var(--success); box-shadow:0 0 6px rgba(22,163,74,.4) }
 .scan-dot.warn { background:var(--error) }
 
-/* Form mark — mobile only */
 .form-mark { display:flex; align-items:center; gap:10px; margin-bottom:18px }
 @media(min-width:960px) { .form-mark { display:none } }
 .fm-icon {
@@ -616,7 +576,6 @@ html,body { height:100%; overflow-x:hidden }
 .fm-rest { font-family:'Cormorant Garamond',serif; font-size:17px; font-weight:600; color:var(--dark); line-height:1.1 }
 .fm-tag { font-size:9px; color:var(--muted); font-weight:400; margin-top:1px; letter-spacing:.4px }
 
-/* Heading */
 .form-heading { margin-bottom:20px }
 .fh-eyebrow {
   font-size:8px; letter-spacing:4px; text-transform:uppercase;
@@ -637,7 +596,6 @@ html,body { height:100%; overflow-x:hidden }
 }
 .fh-body { font-size:13px; color:var(--body); line-height:1.9; font-weight:300; max-width:340px }
 
-/* Ornamental divider */
 .orn-div { display:flex; align-items:center; gap:12px; margin-bottom:22px }
 .od-line { flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--border), transparent) }
 .od-gem {
@@ -647,7 +605,6 @@ html,body { height:100%; overflow-x:hidden }
 }
 .od-gem svg { transform:rotate(-45deg) }
 
-/* Fields */
 .fields { display:flex; flex-direction:column; gap:14px; margin-bottom:20px }
 .field-group { display:flex; flex-direction:column; gap:6px }
 .field-lbl {
@@ -703,7 +660,6 @@ html,body { height:100%; overflow-x:hidden }
   font-family:'Jost',sans-serif; flex-shrink:0;
 }
 
-/* CTA — matching .bprim / .ncta */
 .cta {
   width:100%; padding:0 24px; height:52px;
   background:var(--crimson); color:rgba(255,255,255,.95);
@@ -749,7 +705,6 @@ html,body { height:100%; overflow-x:hidden }
   font-family:'Cormorant Garamond',serif; font-size:15px; font-style:italic; color:#fff;
 }
 
-/* Trust bar */
 .trust-bar {
   display:flex; align-items:center; justify-content:center;
   gap:0; flex-wrap:wrap; margin-bottom:16px;
@@ -762,7 +717,6 @@ html,body { height:100%; overflow-x:hidden }
 .trust-item svg { color:var(--crimson) }
 .trust-sep { width:1px; height:12px; background:var(--border-soft); flex-shrink:0 }
 
-/* Form bottom marquee */
 .form-marquee {
   overflow:hidden; padding:10px 0;
   border-top:1px solid var(--border); margin-top:4px;
@@ -779,7 +733,6 @@ html,body { height:100%; overflow-x:hidden }
 }
 .fm-item svg { color:var(--crimson); opacity:.6 }
 
-/* ════ TOAST ════ */
 .toast {
   position:fixed; top:22px; left:50%; transform:translateX(-50%);
   padding:12px 20px 12px 16px; border-radius:2px;
@@ -797,7 +750,6 @@ html,body { height:100%; overflow-x:hidden }
 }
 @keyframes toastIn { from{opacity:0;transform:translate(-50%,-12px)} to{opacity:1;transform:translate(-50%,0)} }
 
-/* ════ RESPONSIVE ════ */
 @media(max-width:959px) {
   .rp { padding-top:clamp(22px,4vw,36px) }
   .form-shell { max-width:100% }
