@@ -32,7 +32,7 @@ export default function CartPage() {
   const token = localStorage.getItem("customerJWT");
 
 if (!token || !table) {
-  router.push("/customer/login");
+  router.push("/customer/scan-qr");
   return;
 }
   const key = `currentCart_${table}_${name}`;
@@ -449,4 +449,3 @@ console.log("Mounted:", mounted);
       </div>
     </>
   );
-}
