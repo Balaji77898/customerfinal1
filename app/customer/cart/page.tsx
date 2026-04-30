@@ -13,100 +13,136 @@ interface CartItem {
   qty: number;
 }
 
-export default function CartPage() {
+/* ─────────────────────────────────────────────
+   Helper: extract tableNumber from localStorage
+   Tries every key variant the backend might use,
+   then falls back to decoding the QR JWT token.
+───────────────────────────────────────────── */
+function resolveTableNumber(): string | null {
+  // 1. Direct localStorage keys (in priority order)
+  const directKeys = [
+    "tableNumber",
+    "table_number",
+    "tableNo",
+    "table",
+    "TableNumber",
+  ];
+  for (const key of directKeys) {
+    const val = localStorage.getItem(key);
+    if (val && val.trim() !== "" && val !== "null" && val !== "undefined") {
+      return val.trim();
+    }
+  }
 
+  // 2. Fallback: decode it from the QR JWT stored in localStorage
+  const qrToken =
+    localStorage.getItem("qrToken") ||
+    localStorage.getItem("customerQRToken") ||
+    null;
+
+  if (qrToken) {
+    try {
+      const parts = qrToken.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        const t =
+          payload?.tableNumber ??
+          payload?.table_number ??
+          payload?.table ??
+          payload?.tableNo ??
+          null;
+        if (t !== null && t !== undefined) {
+          // Persist so future reads are instant
+          localStorage.setItem("tableNumber", String(t));
+          return String(t);
+        }
+      }
+    } catch {
+      // Not a valid JWT — ignore silently
+    }
+  }
+
+  return null;
+}
+
+export default function CartPage() {
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Guest");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-  const name = localStorage.getItem("customerName") || "Guest";
-  const table = localStorage.getItem("tableNumber") || "";
+    const name = localStorage.getItem("customerName") || "Guest";
+    const token = localStorage.getItem("customerJWT");
 
-  console.log("Customer Name:", name);
-  console.log("Table Number:", table);
+    // ── Robust table resolution ──
+    const table = resolveTableNumber();
 
-  setCustomerName(name);
+    console.log("Customer Name :", name);
+    console.log("Table Number  :", table);
+    console.log("JWT present   :", !!token);
 
-  const token = localStorage.getItem("customerJWT");
+    setCustomerName(name);
 
-if (!token || !table) {
-  router.push("/customer/scan-qr");
-  return;
-}
-  const key = `currentCart_${table}_${name}`;
-  console.log("Generated Cart Key:", key);
+    if (!token || !table) {
+      console.warn(
+        "Missing auth — redirecting to scan-qr.",
+        { token: !!token, table }
+      );
+      router.push("/customer/scan-qr");
+      return;
+    }
 
-  const stored = localStorage.getItem(key);
+    const key = `currentCart_${table}_${name}`;
+    console.log("Cart key:", key);
 
-  if (stored) {
-    try {
-      const parsedCart = JSON.parse(stored);
-      console.log("Cart loaded from localStorage:", parsedCart);
-      setCart(parsedCart);
-    } catch (error) {
-      console.log("Cart JSON parse failed:", error);
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        console.log("Cart loaded:", parsed);
+        setCart(parsed);
+      } catch (err) {
+        console.warn("Cart JSON parse failed:", err);
+        setCart([]);
+      }
+    } else {
+      console.log("No saved cart for key:", key);
       setCart([]);
     }
-  } else {
-    console.log("No saved cart found for key:", key);
-    setCart([]);
-  }
 
-  setMounted(true);
-}, []);
+    setMounted(true);
+  }, []);
 
- const saveCart = (updated: CartItem[]) => {
-  setCart(updated);
+  /* ── persist cart to localStorage ── */
+  const saveCart = (updated: CartItem[]) => {
+    setCart(updated);
 
-  const name =
-    localStorage.getItem("customerName") || customerName || "Guest";
+    const name = localStorage.getItem("customerName") || customerName || "Guest";
+    const table = resolveTableNumber() || "1";
+    const cartKey = `currentCart_${table}_${name}`;
 
-  const table =
-    localStorage.getItem("tableNumber") || "1";
+    console.log("Saving cart →", cartKey, updated);
+    localStorage.setItem(cartKey, JSON.stringify(updated));
+  };
 
-  const cartKey = `currentCart_${table}_${name}`;
+  const incQty = (id: string) =>
+    saveCart(cart.map((i) => (i.id === id ? { ...i, qty: i.qty + 1 } : i)));
 
-  console.log("Saving cart to:", cartKey);
-  console.log("Updated cart:", updated);
+  const decQty = (id: string) =>
+    saveCart(
+      cart
+        .map((i) => (i.id === id ? { ...i, qty: i.qty - 1 } : i))
+        .filter((i) => i.qty > 0)
+    );
 
-  localStorage.setItem(cartKey, JSON.stringify(updated));
-};
+  const delItem = (id: string) =>
+    saveCart(cart.filter((i) => i.id !== id));
 
-  const incQty = (id: string) => {
-  console.log("Increasing qty for item:", id);
-
-  saveCart(
-    cart.map((i) =>
-      i.id === id ? { ...i, qty: i.qty + 1 } : i
-    )
+  const subtotal = cart.reduce(
+    (s, i) => s + parseFloat(i.price) * i.qty,
+    0
   );
-};
-
-const decQty = (id: string) => {
-  console.log("Decreasing qty for item:", id);
-
-  saveCart(
-    cart
-      .map((i) =>
-        i.id === id ? { ...i, qty: i.qty - 1 } : i
-      )
-      .filter((i) => i.qty > 0)
-  );
-};
-
-const delItem = (id: string) => {
-  console.log("Deleting item:", id);
-
-  saveCart(cart.filter((i) => i.id !== id));
-};
-
-  const subtotal = cart.reduce((s, i) => s + parseFloat(i.price) * i.qty, 0);
-
-  console.log("Current cart state:", cart);
-console.log("Subtotal:", subtotal);
-console.log("Mounted:", mounted);
 
   return (
     <>
@@ -124,6 +160,7 @@ console.log("Mounted:", mounted);
 
         .page{min-height:100vh;background:linear-gradient(155deg,#FAF5EC 0%,#F2E9D8 55%,#FAF5EC 100%);}
 
+        /* ── header ── */
         .hdr{
           background:linear-gradient(150deg,#3A0B0B 0%,#5D1616 45%,#6E1A1A 80%,#4A1010 100%);
           position:sticky;top:0;z-index:50;transition:box-shadow .35s;
@@ -146,30 +183,22 @@ console.log("Mounted:", mounted);
           color:#fff;font-family:var(--sans);font-size:13px;font-weight:600;
           -webkit-tap-highlight-color:transparent;
           transition:all .25s cubic-bezier(.23,1,.32,1);
-          flex-shrink:0;
-          backdrop-filter:blur(8px);
+          flex-shrink:0;backdrop-filter:blur(8px);
         }
         .back-btn:hover{background:rgba(30,5,8,.8);border-color:var(--g);transform:translateX(-2px);}
         .back-btn:active{transform:scale(.96);}
 
-        .hdr-title{
-          flex:1;text-align:center;
-        }
-        .hdr-title-text{
-          font-family:var(--serif);font-style:italic;font-size:20px;color:#FFF8E1;
-        }
-        .hdr-sub{
-          font-family:var(--sans);font-size:10px;
-          color:rgba(200,169,81,.6);letter-spacing:.16em;text-transform:uppercase;
-          margin-top:1px;
-        }
-
+        .hdr-title{flex:1;text-align:center;}
+        .hdr-title-text{font-family:var(--serif);font-style:italic;font-size:20px;color:#FFF8E1;}
+        .hdr-sub{font-family:var(--sans);font-size:10px;color:rgba(200,169,81,.6);letter-spacing:.16em;text-transform:uppercase;margin-top:1px;}
         .hdr-spacer{flex-shrink:0;width:80px;}
 
+        /* ── body ── */
         .body{max-width:860px;margin:0 auto;padding:0 16px;}
         @media(min-width:768px){.body{padding:0 32px;}}
         @media(min-width:1024px){.body{padding:0 48px;max-width:900px;}}
 
+        /* ── empty state ── */
         .empty{
           display:flex;flex-direction:column;align-items:center;justify-content:center;
           min-height:55vh;gap:16px;
@@ -193,10 +222,12 @@ console.log("Mounted:", mounted);
         }
         .empty-btn:hover{transform:scale(1.05);box-shadow:0 10px 28px rgba(93,22,22,.35);}
 
+        /* ── section labels ── */
         .eyebrow{font-family:var(--sans);font-size:10px;font-weight:600;color:rgba(200,169,81,.65);letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px;}
         .sec-title{font-family:var(--serif);font-style:italic;font-size:22px;color:var(--c);}
         .rule{height:1px;margin:8px 0 16px;background:linear-gradient(90deg,transparent,rgba(200,169,81,.38),transparent);}
 
+        /* ── cart card ── */
         .cart-card{
           background:var(--card);
           border:1.5px solid rgba(200,169,81,.2);
@@ -210,13 +241,11 @@ console.log("Mounted:", mounted);
           box-shadow:0 12px 40px rgba(93,22,22,.1);
           transform:translateY(-2px);
         }
-
         .cgline{height:2px;width:0;background:linear-gradient(90deg,transparent,var(--g),transparent);transition:width .42s;margin:0 auto;}
         .cart-card:hover .cgline{width:100%;}
 
         .card-inner{padding:14px 14px 16px;}
         @media(min-width:768px){.card-inner{padding:16px 18px 18px;}}
-
         .card-row{display:flex;gap:14px;}
 
         .item-img{
@@ -245,6 +274,7 @@ console.log("Mounted:", mounted);
 
         .price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;}
 
+        /* ── qty control ── */
         .qwrap{
           display:flex;align-items:center;
           height:34px;border-radius:10px;overflow:hidden;
@@ -266,6 +296,7 @@ console.log("Mounted:", mounted);
         .iprice-unit{font-family:var(--sans);font-size:11px;color:rgba(93,22,22,.45);margin-bottom:1px;}
         .iprice{font-family:var(--serif);font-size:20px;color:var(--cd);}
 
+        /* ── order total ── */
         .total-card{
           background:linear-gradient(135deg,rgba(200,169,81,.12) 0%,rgba(212,183,110,.08) 100%);
           border:1.5px solid rgba(200,169,81,.35);
@@ -277,6 +308,7 @@ console.log("Mounted:", mounted);
         .total-final{font-family:var(--serif);font-size:22px;color:var(--cd);}
         .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(200,169,81,.4),transparent);margin:10px 0;}
 
+        /* ── sticky CTA ── */
         .cta-wrap{
           position:fixed;bottom:0;left:0;right:0;z-index:40;
           padding:10px 16px 22px;
@@ -315,13 +347,16 @@ console.log("Mounted:", mounted);
 
       <div className="page" style={{ paddingBottom: cart.length > 0 ? 96 : 28 }}>
 
-        {/* HEADER */}
+        {/* ── HEADER ── */}
         <header className="hdr">
           <div className="gl" />
           <div className="hdr-inner">
-            <button className="back-btn" onClick={() => router.push("/customer/menu")}>
+            <button
+              className="back-btn"
+              onClick={() => router.push("/customer/menu")}
+            >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M19 12H5M12 5l-7 7 7 7"/>
+                <path d="M19 12H5M12 5l-7 7 7 7" />
               </svg>
               Menu
             </button>
@@ -336,116 +371,155 @@ console.log("Mounted:", mounted);
           <div className="gl2" />
         </header>
 
-        {/* BODY */}
+        {/* ── BODY ── */}
         <div className="body" style={{ paddingTop: 20 }}>
 
-          {/* EMPTY */}
+          {/* Empty state */}
           {mounted && cart.length === 0 && (
             <div className="empty">
               <div className="empty-icon">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(93,22,22,.35)" strokeWidth="1.5">
-                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 01-8 0" />
                 </svg>
               </div>
               <p className="empty-title">Your cart is empty</p>
               <p className="empty-sub">Add items from the menu to get started</p>
-              <button className="empty-btn" onClick={() => router.push("/customer/menu")}>Browse Menu</button>
+              <button
+                className="empty-btn"
+                onClick={() => router.push("/customer/menu")}
+              >
+                Browse Menu
+              </button>
             </div>
           )}
 
-          {/* ITEMS */}
-          {cart.length > 0 && (<>
-            <p className="eyebrow">Your Order</p>
-            <p className="sec-title">Cart Summary</p>
-            <div className="rule" />
+          {/* Cart items */}
+          {cart.length > 0 && (
+            <>
+              <p className="eyebrow">Your Order</p>
+              <p className="sec-title">Cart Summary</p>
+              <div className="rule" />
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {cart.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="cart-card"
-                  style={{ animationDelay: `${idx * 70}ms` }}
-                >
-                  <div className="cgline" />
-                  <div className="card-inner">
-                    <div className="card-row">
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {cart.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="cart-card"
+                    style={{ animationDelay: `${idx * 70}ms` }}
+                  >
+                    <div className="cgline" />
+                    <div className="card-inner">
+                      <div className="card-row">
 
-                      {/* image */}
-                      <div className="item-img">
-                        {item.image_url ? (
-                          <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-                        ) : (
-                          <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg,rgba(200,169,81,.15),rgba(93,22,22,.08))" }} />
-                        )}
-                      </div>
-
-                      {/* info */}
-                      <div className="item-info">
-                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <p className="item-name">{item.name}</p>
-                            <p className="item-desc">{item.description}</p>
-                          </div>
-                          <button className="del-btn" onClick={() => delItem(item.id)}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <path d="M18 6L6 18M6 6l12 12"/>
-                            </svg>
-                          </button>
+                        {/* Image */}
+                        <div className="item-img">
+                          {item.image_url ? (
+                            <Image
+                              src={item.image_url}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: "100%", height: "100%",
+                                background: "linear-gradient(135deg,rgba(200,169,81,.15),rgba(93,22,22,.08))",
+                              }}
+                            />
+                          )}
                         </div>
 
-                        <div className="price-row">
-                          <div className="qwrap">
-                            <button className="qbtn" onClick={() => decQty(item.id)}>−</button>
-                            <span className="qnum">{item.qty}</span>
-                            <button className="qbtn" onClick={() => incQty(item.id)}>+</button>
+                        {/* Info */}
+                        <div className="item-info">
+                          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <p className="item-name">{item.name}</p>
+                              <p className="item-desc">{item.description}</p>
+                            </div>
+                            <button
+                              className="del-btn"
+                              onClick={() => delItem(item.id)}
+                              aria-label={`Remove ${item.name}`}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                              </svg>
+                            </button>
                           </div>
-                          <div className="iprice-wrap">
-                            <p className="iprice-unit">₹{parseFloat(item.price).toFixed(0)} × {item.qty}</p>
-                            <p className="iprice">₹{(parseFloat(item.price) * item.qty).toFixed(0)}</p>
+
+                          <div className="price-row">
+                            <div className="qwrap">
+                              <button className="qbtn" onClick={() => decQty(item.id)}>−</button>
+                              <span className="qnum">{item.qty}</span>
+                              <button className="qbtn" onClick={() => incQty(item.id)}>+</button>
+                            </div>
+                            <div className="iprice-wrap">
+                              <p className="iprice-unit">
+                                ₹{parseFloat(item.price).toFixed(0)} × {item.qty}
+                              </p>
+                              <p className="iprice">
+                                ₹{(parseFloat(item.price) * item.qty).toFixed(0)}
+                              </p>
+                            </div>
                           </div>
                         </div>
+
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </>)}
+                ))}
+              </div>
+            </>
+          )}
 
-          {/* ORDER TOTAL */}
+          {/* Order total */}
           {cart.length > 0 && (
             <div className="total-card">
-              <p style={{ fontFamily: "var(--sans)", fontSize: 11, fontWeight: 600, color: "rgba(200,169,81,.65)", letterSpacing: ".16em", textTransform: "uppercase", marginBottom: 12 }}>
+              <p style={{
+                fontFamily: "var(--sans)", fontSize: 11, fontWeight: 600,
+                color: "rgba(200,169,81,.65)", letterSpacing: ".16em",
+                textTransform: "uppercase", marginBottom: 12,
+              }}>
                 Order Total
               </p>
-              {cart.map(item => (
+              {cart.map((item) => (
                 <div className="total-row" key={item.id}>
                   <span>{item.name} × {item.qty}</span>
                   <span style={{ fontWeight: 600, color: "var(--c)" }}>
-                    ₹{(parseFloat(item.price) * item.qty)}
+                    ₹{(parseFloat(item.price) * item.qty).toFixed(0)}
                   </span>
                 </div>
               ))}
               <div className="divider" />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontFamily: "var(--sans)", fontSize: 13, fontWeight: 600, color: "var(--c)" }}>Total</span>
+                <span style={{ fontFamily: "var(--sans)", fontSize: 13, fontWeight: 600, color: "var(--c)" }}>
+                  Total
+                </span>
                 <span className="total-final">₹{subtotal.toFixed(0)}</span>
               </div>
             </div>
           )}
+
         </div>
 
-        {/* FOOTER */}
+        {/* ── STICKY FOOTER CTA ── */}
         {cart.length > 0 && (
           <div className="cta-wrap">
             <div className="cta-inner">
-              <button className="proceed-btn" onClick={() => router.push("/customer/payment")}>
+              <button
+                className="proceed-btn"
+                onClick={() => router.push("/customer/payment")}
+              >
                 <span className="proceed-lbl">Proceed to Payment</span>
                 <span className="proceed-amt">₹{subtotal.toFixed(0)}</span>
               </button>
             </div>
           </div>
         )}
+
       </div>
     </>
   );

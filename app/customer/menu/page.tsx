@@ -31,13 +31,14 @@ export default function MenuPage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer   = useRef<IntersectionObserver | null>(null);
 
+  // ── scroll shadow ──
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  // FIX: Added filteredItems as dependency so observer re-runs when items change
+  // ── intersection observer for card reveal ──
   useEffect(() => {
     observer.current?.disconnect();
     observer.current = new IntersectionObserver(entries => {
@@ -50,20 +51,47 @@ export default function MenuPage() {
     }, { threshold: 0.05, rootMargin: "0px 0px -20px 0px" });
     cardRefs.current.forEach(el => observer.current?.observe(el));
     return () => observer.current?.disconnect();
-  }, [categories, selectedCat, search]); // FIX: proper dependencies
+  }, [categories, selectedCat, search]);
 
+  // ── load auth + cart from localStorage ──
   useEffect(() => {
-    const name  = localStorage.getItem("customerName")  || "Guest";
-    const table = localStorage.getItem("tableNumber")   || "";
-    setCustomerName(name); setTableNumber(table);
-    if (name && table) {
-      const s = localStorage.getItem(`currentCart_${table}_${name}`);
-      if (s) {
-        try { setCart(JSON.parse(s)); } catch { /* ignore corrupt cart */ }
+    const name  = localStorage.getItem("customerName") || "Guest";
+    const table = localStorage.getItem("tableNumber")  || "";
+
+    setCustomerName(name);
+    setTableNumber(table);
+
+    if (!name || !table) return;
+
+    const correctKey = `currentCart_${table}_${name}`;
+
+    // ── FIX: clean up stale carts from previous users on this device/table ──
+    const toDelete: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || "";
+      if (k.startsWith(`currentCart_${table}_`) && k !== correctKey) {
+        toDelete.push(k);
+      }
+    }
+    toDelete.forEach(k => {
+      console.log("🧹 Removed stale cart:", k);
+      localStorage.removeItem(k);
+    });
+
+    // ── load cart for current user ──
+    const s = localStorage.getItem(correctKey);
+    if (s) {
+      try {
+        setCart(JSON.parse(s));
+        console.log("🛒 Cart loaded from:", correctKey);
+      } catch {
+        console.warn("Cart parse failed, clearing");
+        localStorage.removeItem(correctKey);
       }
     }
   }, []);
 
+  // ── fetch menu ──
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -74,40 +102,33 @@ export default function MenuPage() {
         return;
       }
       try {
-        const res = await fetch(`${BASE_URL}/api/customer/menu`, {
+        const res  = await fetch(`${BASE_URL}/api/customer/menu`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-
         const json = await res.json();
-
-        // DEBUG: log raw response so you can verify the exact shape
         console.log("🍽️ Menu API raw response:", JSON.stringify(json, null, 2));
 
         if (!res.ok || !json.success) {
           throw new Error(json?.message || `Server error: ${res.status}`);
         }
 
-        // FIX: Try every possible key the backend might use
         const cats: Category[] =
-          json.data?.categories ??   // { success, data: { categories: [...] } }
-          json.data?.menu ??         // { success, data: { menu: [...] } }
-          json.data?.items ??        // { success, data: { items: [...] } }
-          (Array.isArray(json.data) ? json.data : null) ?? // { success, data: [...] }
-          json.categories ??         // { success, categories: [...] }
-          json.menu ??               // { success, menu: [...] }
+          json.data?.categories ??
+          json.data?.menu ??
+          json.data?.items ??
+          (Array.isArray(json.data) ? json.data : null) ??
+          json.categories ??
+          json.menu ??
           [];
 
-        console.log(`✅ Parsed ${cats.length} categories`, cats);
-
-        if (cats.length === 0) {
-          console.warn("⚠️ No categories found. Check the API response shape above.");
-        }
+        console.log(`✅ Parsed ${cats.length} categories`);
+        if (cats.length === 0) console.warn("⚠️ No categories found — check API shape above");
 
         setCategories(cats);
-        setSelectedCat("All"); // FIX: always start on "All", not first category
+        setSelectedCat("All");
         setError("");
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Unable to load menu.";
@@ -119,52 +140,34 @@ export default function MenuPage() {
     })();
   }, []);
 
+  // ── FIX: always read name + table fresh from localStorage, never from stale state ──
   const saveCart = (u: CartItem[]) => {
-  setCart(u);
+    setCart(u);
 
-  const name =
-    localStorage.getItem("customerName") || customerName || "Guest";
+    const name  = localStorage.getItem("customerName") || "Guest";
+    const table = localStorage.getItem("tableNumber")  || "1";
+    const key   = `currentCart_${table}_${name}`;
 
-  const table =
-    localStorage.getItem("tableNumber") || tableNumber || "1";
-
-  const cartKey = `currentCart_${table}_${name}`;
-
-  console.log("Saving cart to:", cartKey);
-  console.log("Cart:", u);
-
-  localStorage.setItem(cartKey, JSON.stringify(u));
-};
+    console.log("💾 Saving cart →", key, u);
+    localStorage.setItem(key, JSON.stringify(u));
+  };
 
   const addItem = (item: FoodItem) => {
-  console.log("ADD CLICKED:", item);
+    const u = [...cart];
+    const i = u.findIndex(x => x.id === item.id);
+    if (i >= 0) {
+      u[i] = { ...u[i], qty: u[i].qty + 1 };
+    } else {
+      u.push({ ...item, image_url: item.image_url || null, qty: 1, parcel: false, notes: "" });
+    }
+    saveCart(u);
+    showToast(`${item.name} added`);
+  };
 
-  const u = [...cart];
-  const i = u.findIndex((x) => x.id === item.id);
-
-  if (i >= 0) {
-    u[i].qty += 1;
-    console.log("Increased quantity:", u[i]);
-  } else {
-    const newItem = {
-      ...item,
-      image_url: item.image_url || null,
-      qty: 1,
-      parcel: false,
-      notes: "",
-    };
-
-    u.push(newItem);
-    console.log("Added new item:", newItem);
-  }
-
-  console.log("Updated cart before save:", u);
-
-  saveCart(u);
-  showToast(`${item.name} added`);
-};
   const removeItem = (id: string) =>
-    saveCart(cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0));
+    saveCart(
+      cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0)
+    );
 
   const getQty   = (id: string) => cart.find(i => i.id === id)?.qty || 0;
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
@@ -179,7 +182,8 @@ export default function MenuPage() {
   }, [categories, selectedCat, search]);
 
   const allItems = useMemo(
-    () => categories.flatMap(c => c.items).filter(i => i.image_url), [categories]
+    () => categories.flatMap(c => c.items).filter(i => i.image_url),
+    [categories]
   );
 
   const showToast = (msg: string) => {
@@ -191,7 +195,7 @@ export default function MenuPage() {
   const regCard = (id: string, el: HTMLDivElement | null) => {
     if (el) {
       cardRefs.current.set(id, el);
-      observer.current?.observe(el); // FIX: observe immediately when card mounts
+      observer.current?.observe(el);
     } else {
       cardRefs.current.delete(id);
     }
@@ -215,8 +219,7 @@ export default function MenuPage() {
 
         .hdr {
           background:linear-gradient(160deg,#3A0B0B 0%,#5D1616 40%,#6E1A1A 75%,#4A1010 100%);
-          position:sticky; top:0; z-index:50;
-          transition:box-shadow .3s;
+          position:sticky; top:0; z-index:50; transition:box-shadow .3s;
         }
         .hdr.up { box-shadow:0 6px 30px rgba(0,0,0,.45); }
         .gline  { height:2px; background:linear-gradient(90deg,transparent,rgba(200,169,81,.3) 20%,#C8A951 50%,rgba(200,169,81,.3) 80%,transparent); }
@@ -357,10 +360,7 @@ export default function MenuPage() {
           transform:translateY(-5px) !important;
         }
 
-        .fc-img {
-          position:relative; width:100%; padding-top:68%;
-          overflow:hidden;
-        }
+        .fc-img { position:relative; width:100%; padding-top:68%; overflow:hidden; }
         .fc-img img { transition:transform .6s cubic-bezier(.23,1,.32,1), filter .45s; }
         .fc:hover .fc-img img { transform:scale(1.08); filter:brightness(1.04) saturate(1.06); }
         .fc-img::after {
@@ -387,8 +387,7 @@ export default function MenuPage() {
         .fc-body { padding:10px 11px 12px; flex:1; display:flex; flex-direction:column; }
         .fc-name {
           font-family:var(--serif); font-size:15px; color:var(--c);
-          line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-          margin-bottom:3px;
+          line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px;
         }
         @media(min-width:768px) { .fc-name { font-size:16px; } }
         .fc-desc {
@@ -397,10 +396,7 @@ export default function MenuPage() {
           display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;
         }
 
-        .fc-foot {
-          display:flex; align-items:center; justify-content:space-between;
-          gap:6px; flex-wrap:wrap;
-        }
+        .fc-foot { display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }
         .fc-price { font-family:var(--serif); font-size:20px; color:var(--cd); flex-shrink:0; }
 
         .abtn {
@@ -416,8 +412,7 @@ export default function MenuPage() {
         .qw {
           display:flex; align-items:center;
           height:32px; border-radius:9px; overflow:hidden;
-          background:rgba(200,169,81,.1); border:1.5px solid rgba(200,169,81,.35);
-          flex-shrink:0;
+          background:rgba(200,169,81,.1); border:1.5px solid rgba(200,169,81,.35); flex-shrink:0;
         }
         .qb {
           width:30px; height:100%; display:flex; align-items:center; justify-content:center;
@@ -442,7 +437,7 @@ export default function MenuPage() {
         @media(min-width:768px)  { .cta-wrap { padding:10px 28px 22px; } }
         @media(min-width:1024px) { .cta-wrap { padding:10px 48px 22px; } }
         @keyframes ctaUp { from{transform:translateY(70px);opacity:0;} to{transform:translateY(0);opacity:1;} }
-        .cta-in  { max-width:1320px; margin:0 auto; }
+        .cta-in { max-width:1320px; margin:0 auto; }
         .ctabtn {
           width:100%; display:flex; align-items:center; justify-content:space-between;
           padding:14px 22px; border-radius:15px; border:none; cursor:pointer;
@@ -477,7 +472,6 @@ export default function MenuPage() {
         }
         .toast.on { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
 
-        /* Debug banner */
         .debug-banner {
           background:rgba(200,169,81,.12); border:1px solid rgba(200,169,81,.3);
           border-radius:10px; padding:12px 16px; margin:16px 0;
@@ -495,7 +489,7 @@ export default function MenuPage() {
 
       <div className="pg" style={{ paddingBottom: totalQty > 0 ? 88 : 24 }}>
 
-        {/* HEADER */}
+        {/* ── HEADER ── */}
         <header className={`hdr${scrolled ? " up" : ""}`}>
           <div className="gline" />
           <div className="hi">
@@ -507,14 +501,17 @@ export default function MenuPage() {
               <div className="hi-btns">
                 <button className="nbtn" onClick={() => router.push("/customer/cart")}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 01-8 0"/>
                   </svg>
                   Cart
                   {totalQty > 0 && <span className="badge">{totalQty}</span>}
                 </button>
                 <button className="nbtn" onClick={() => router.push("/customer/order-status")}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
                   </svg>
                   Status
                 </button>
@@ -537,13 +534,15 @@ export default function MenuPage() {
           <div className="gline2" />
         </header>
 
-        {/* BODY */}
+        {/* ── BODY ── */}
         <div className="bd">
 
           {loading && (
             <div style={{ display:"flex", flexDirection:"column", alignItems:"center", paddingTop:64, gap:16 }}>
               <div className="spin" />
-              <p style={{ fontFamily:"var(--sans)", fontSize:11, color:"var(--c)", opacity:.55, letterSpacing:".16em" }}>LOADING MENU…</p>
+              <p style={{ fontFamily:"var(--sans)", fontSize:11, color:"var(--c)", opacity:.55, letterSpacing:".16em" }}>
+                LOADING MENU…
+              </p>
             </div>
           )}
 
@@ -555,7 +554,7 @@ export default function MenuPage() {
                 style={{
                   padding:"8px 20px", borderRadius:8, border:"1.5px solid var(--c)",
                   background:"transparent", color:"var(--c)",
-                  fontFamily:"var(--sans)", fontSize:13, cursor:"pointer"
+                  fontFamily:"var(--sans)", fontSize:13, cursor:"pointer",
                 }}
               >
                 Try Again
@@ -565,14 +564,15 @@ export default function MenuPage() {
 
           {!loading && !error && (<>
 
-            {/* Debug info — remove this block once menu loads correctly */}
             {categories.length === 0 && (
               <div className="debug-banner">
                 <strong>⚠️ Menu loaded but 0 categories found</strong>
-                Open browser DevTools → Console and look for <code>🍽️ Menu API raw response</code> to see the exact data shape returned by the backend. Share that shape and the extraction line can be fixed precisely.
+                Open DevTools → Console and look for{" "}
+                <code>🍽️ Menu API raw response</code> to see the exact shape.
               </div>
             )}
 
+            {/* ── Featured strip ── */}
             {allItems.length > 0 && (
               <div style={{ marginTop:22, marginBottom:26 }}>
                 <p className="s-eye">Featured Dishes</p>
@@ -592,6 +592,7 @@ export default function MenuPage() {
               </div>
             )}
 
+            {/* ── Category pills ── */}
             <p className="s-eye">Menu</p>
             <p className="s-title">Our Specialities</p>
             <div className="s-rule" />
@@ -618,6 +619,7 @@ export default function MenuPage() {
               {filteredItems.length} {filteredItems.length === 1 ? "dish" : "dishes"}
             </p>
 
+            {/* ── Item grid ── */}
             <div className="grid">
               {filteredItems.map((item, idx) => {
                 const qty   = getQty(item.id);
@@ -676,7 +678,7 @@ export default function MenuPage() {
                       style={{
                         background: qty > 0
                           ? "linear-gradient(90deg,transparent,var(--g),transparent)"
-                          : "transparent"
+                          : "transparent",
                       }}
                     />
                   </div>
@@ -695,17 +697,23 @@ export default function MenuPage() {
           </>)}
         </div>
 
+        {/* ── Toast ── */}
         <div className={`toast${toastOn ? " on" : ""}`}>
-          <span style={{ marginRight:6, opacity:.5 }}>✦</span>{toast}<span style={{ marginLeft:6, opacity:.5 }}>✦</span>
+          <span style={{ marginRight:6, opacity:.5 }}>✦</span>
+          {toast}
+          <span style={{ marginLeft:6, opacity:.5 }}>✦</span>
         </div>
 
+        {/* ── Sticky View Cart CTA ── */}
         {totalQty > 0 && (
           <div className="cta-wrap">
             <div className="cta-in">
               <button className="ctabtn" onClick={() => router.push("/customer/cart")}>
                 <span className="cta-lbl">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 01-8 0"/>
                   </svg>
                   View Cart
                 </span>
