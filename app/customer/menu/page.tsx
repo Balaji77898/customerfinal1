@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 interface FoodItem {
@@ -14,6 +14,24 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.on
 
 const isSpecialCat = (name: string) =>
   name.toLowerCase().includes("today") || name.toLowerCase().includes("special");
+
+// FIX: Stable helpers that always read/write localStorage directly — no state dependency
+const getCartKey = () => {
+  const name  = localStorage.getItem("customerName")  || "Guest";
+  const table = localStorage.getItem("tableNumber")   || "";
+  return name && table ? `currentCart_${table}_${name}` : null;
+};
+
+const readCartFromStorage = (): CartItem[] => {
+  const key = getCartKey();
+  if (!key) return [];
+  try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; }
+};
+
+const writeCartToStorage = (items: CartItem[]) => {
+  const key = getCartKey();
+  if (key) localStorage.setItem(key, JSON.stringify(items));
+};
 
 export default function MenuPage() {
   const router = useRouter();
@@ -35,7 +53,6 @@ export default function MenuPage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer   = useRef<IntersectionObserver | null>(null);
 
-  // All localStorage and window access guarded inside useEffect — SSR safe
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", fn, { passive: true });
@@ -61,15 +78,21 @@ export default function MenuPage() {
     return () => observer.current?.disconnect();
   }, [categories, selectedCat, search]);
 
+  // FIX: Load customer info AND cart in a single effect so cart key is always ready
   useEffect(() => {
     if (typeof window === "undefined") return;
     const name  = localStorage.getItem("customerName")  || "Guest";
     const table = localStorage.getItem("tableNumber")   || "";
     setCustomerName(name);
     setTableNumber(table);
-    if (name && table) {
-      const s = localStorage.getItem(`currentCart_${table}_${name}`);
-      if (s) { try { setCart(JSON.parse(s)); } catch { /* ignore */ } }
+    // FIX: Read cart directly here using the key built from localStorage values
+    //      not from React state (which isn't set yet on first render)
+    const key = name && table ? `currentCart_${table}_${name}` : null;
+    if (key) {
+      try {
+        const stored = localStorage.getItem(key);
+        if (stored) setCart(JSON.parse(stored));
+      } catch { /* ignore */ }
     }
   }, []);
 
@@ -102,15 +125,14 @@ export default function MenuPage() {
     })();
   }, []);
 
-  const saveCart = (u: CartItem[]) => {
+  // FIX: saveCart writes directly to localStorage (not via state), then updates state
+  //      Uses the stable helper so the key is always correct regardless of state timing
+  const saveCart = useCallback((u: CartItem[]) => {
+    writeCartToStorage(u);
     setCart(u);
-    if (typeof window === "undefined") return;
-    const name  = localStorage.getItem("customerName")  || "";
-    const table = localStorage.getItem("tableNumber")   || "";
-    if (name && table) localStorage.setItem(`currentCart_${table}_${name}`, JSON.stringify(u));
-  };
+  }, []);
 
-  const syncCartToBackend = async (items: CartItem[]) => {
+  const syncCartToBackend = useCallback(async (items: CartItem[]) => {
     if (typeof window === "undefined") return;
     const token = localStorage.getItem("customerJWT");
     if (!token) return;
@@ -121,19 +143,33 @@ export default function MenuPage() {
         body: JSON.stringify({ items: items.map(i => ({ item_id: i.id, qty: i.qty, parcel: i.parcel, notes: i.notes })) }),
       });
     } catch (err) { console.warn("Cart sync failed:", err); }
-  };
+  }, []);
 
-  const addItem = (item: FoodItem) => {
-    const u = [...cart], i = u.findIndex(x => x.id === item.id);
-    if (i >= 0) u[i].qty += 1;
-    else u.push({ ...item, image_url: item.image_url || null, qty: 1, parcel: false, notes: "" });
-    saveCart(u); syncCartToBackend(u); showToast(`${item.name} added`);
-  };
+  // FIX: addItem reads the CURRENT cart from localStorage directly (not from stale state)
+  //      This prevents the race condition on mobile where state hasn't hydrated yet
+  const addItem = useCallback((item: FoodItem) => {
+    const current = readCartFromStorage();
+    const i = current.findIndex(x => x.id === item.id);
+    let updated: CartItem[];
+    if (i >= 0) {
+      updated = current.map((c, idx) => idx === i ? { ...c, qty: c.qty + 1 } : c);
+    } else {
+      updated = [...current, { ...item, image_url: item.image_url || null, qty: 1, parcel: false, notes: "" }];
+    }
+    saveCart(updated);
+    syncCartToBackend(updated);
+    showToast(`${item.name} added`);
+  }, [saveCart, syncCartToBackend]);
 
-  const removeItem = (id: string) => {
-    const u = cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0);
-    saveCart(u); syncCartToBackend(u);
-  };
+  // FIX: removeItem also reads from localStorage directly for same reason
+  const removeItem = useCallback((id: string) => {
+    const current = readCartFromStorage();
+    const updated = current
+      .map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i)
+      .filter(i => i.qty > 0);
+    saveCart(updated);
+    syncCartToBackend(updated);
+  }, [saveCart, syncCartToBackend]);
 
   const getQty   = (id: string) => cart.find(i => i.id === id)?.qty || 0;
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
@@ -158,7 +194,6 @@ export default function MenuPage() {
     else cardRefs.current.delete(id);
   };
 
-  // Suppress unused var — tableNumber kept for potential future use
   void tableNumber;
 
   return (
