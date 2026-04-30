@@ -117,28 +117,18 @@ export default function MenuPage() {
     if (name && table) localStorage.setItem(`currentCart_${table}_${name}`, JSON.stringify(u));
   };
 
-  const syncCartToBackend = async (items: CartItem[]) => {
-    const token = localStorage.getItem("customerJWT");
-    if (!token) return;
-    try {
-      await fetch(`${BASE_URL}/api/customer/cart`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ items: items.map(i => ({ item_id: i.id, qty: i.qty, parcel: i.parcel, notes: i.notes })) }),
-      });
-    } catch (err) { console.warn("Cart sync failed:", err); }
-  };
+
 
   const addItem = (item: FoodItem) => {
     const u = [...cart], i = u.findIndex(x => x.id === item.id);
     if (i >= 0) u[i].qty += 1;
     else u.push({ ...item, image_url: item.image_url || null, qty: 1, parcel: false, notes: "" });
-    saveCart(u); syncCartToBackend(u); showToast(`${item.name} added`);
+    saveCart(u);  showToast(`${item.name} added`);
   };
 
   const removeItem = (id: string) => {
     const u = cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0);
-    saveCart(u); syncCartToBackend(u);
+    saveCart(u); 
   };
 
   const getQty   = (id: string) => cart.find(i => i.id === id)?.qty || 0;
