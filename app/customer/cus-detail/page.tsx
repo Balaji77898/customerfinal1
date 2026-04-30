@@ -13,81 +13,68 @@ const SLIDES = [
 const SLIDE_LABELS = ["Signature Butter Chicken", "Seekh Kebab Platter", "Dum Biryani", "Paneer Tikka"];
 
 /* ── Icon helpers ── */
-const IconUser = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconUser = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
   </svg>
 );
-const IconPhone = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconPhone = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
   </svg>
 );
-const IconFlame = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconFlame = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32-2.59 2.11-3.66 5.65-2.7 8.87.06.22.12.44.12.67 0 .44-.36.82-.8.82-.42 0-.72-.27-.83-.65-.03-.1-.06-.2-.08-.31-1.14 1.6-1.33 3.75-.55 5.56.53 1.22 1.39 2.28 2.45 3.04.98.71 2.09 1.21 3.26 1.41.33.06.66.1.99.1 1.23.04 2.44-.26 3.47-.86 2.01-1.14 3.36-3.28 3.36-5.68 0-1.32-.43-2.57-1.14-3.6z" />
   </svg>
 );
-const IconArrowRight = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconArrowRight = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>
     <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
   </svg>
 );
-const IconCheck = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconCheck = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" {...p}>
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
-const IconStar = ({ size = 16, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconStar = ({ size = 16, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
   </svg>
 );
-const IconShield = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconShield = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
   </svg>
 );
-const IconSparkle = ({ size = 16, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconSparkle = ({ size = 16, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M12 1L9 9l-8 3 8 3 3 8 3-8 8-3-8-3z" />
   </svg>
 );
-const IconClock = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconClock = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
   </svg>
 );
-const IconMapPin = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
+const IconMapPin = ({ size = 20, ...p }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" {...p}>
     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
   </svg>
 );
 
-/* ── Particle type ── */
-interface Particle {
-  x: number; y: number; r: number;
-  vy: number; vx: number; a: number;
-  w: number; ws: number; c: string;
-}
-
 /* ── Canvas particle effect ── */
-function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
+function useParticles(canvasRef) {
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
     const ctx = cv.getContext("2d");
-    if (!ctx) return;
-    let W = 0, H = 0, raf = 0;
-
-    const resize = () => {
-      W = cv.width = cv.offsetWidth;
-      H = cv.height = cv.offsetHeight;
-    };
+    let W, H, raf;
+    const resize = () => { W = cv.width = cv.offsetWidth; H = cv.height = cv.offsetHeight; };
     resize();
     window.addEventListener("resize", resize, { passive: true });
-
-    const pts: Particle[] = Array.from({ length: 28 }, () => ({
+    const pts = Array.from({ length: 28 }, () => ({
       x: Math.random(), y: Math.random(),
       r: 0.5 + Math.random() * 1.4,
       vy: 0.00012 + Math.random() * 0.00022,
@@ -95,86 +82,63 @@ function useParticles(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
       a: 0.06 + Math.random() * 0.16,
       w: Math.random() * Math.PI * 2,
       ws: 0.004 + Math.random() * 0.014,
-      c: (["rgba(200,0,26,A)", "rgba(255,154,0,A)", "rgba(255,213,0,A)"] as const)[Math.floor(Math.random() * 3)],
+      c: ["rgba(200,0,26,A)", "rgba(255,154,0,A)", "rgba(255,213,0,A)"][Math.floor(Math.random() * 3)],
     }));
-
     const draw = () => {
       ctx.clearRect(0, 0, W, H);
       pts.forEach(p => {
-        p.w += p.ws;
-        p.y = (p.y + p.vy) % 1;
+        p.w += p.ws; p.y = (p.y + p.vy) % 1;
         p.x = ((p.x + p.vx + Math.sin(p.w) * 0.0001) % 1 + 1) % 1;
         const px = p.x * W, py = p.y * H;
         const g = ctx.createRadialGradient(px, py, 0, px, py, p.r * 7);
         g.addColorStop(0, p.c.replace("A", (p.a * 0.9).toFixed(2)));
         g.addColorStop(0.5, p.c.replace("A", (p.a * 0.3).toFixed(2)));
         g.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.beginPath();
-        ctx.arc(px, py, p.r * 7, 0, Math.PI * 2);
-        ctx.fillStyle = g;
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(px, py, p.r * 7, 0, Math.PI * 2);
+        ctx.fillStyle = g; ctx.fill();
       });
       raf = requestAnimationFrame(draw);
     };
     draw();
-
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
-  }, [canvasRef]);
-}
-
-/* ── Toast type ── */
-interface Toast {
-  msg: string;
-  type: "error" | "success";
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+  }, []);
 }
 
 export default function CustomerDetails() {
   const router = useRouter();
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef = useRef(null);
   useParticles(canvasRef);
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [qrToken, setQrToken] = useState<string | null>(null);
+  const [qrToken, setQrToken] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<Toast | null>(null);
-  const [focused, setFocused] = useState<string | null>(null);
+  const [toast, setToast] = useState(null);
+  const [focused, setFocused] = useState(null);
   const [slideIdx, setSlideIdx] = useState(0);
   const [entered, setEntered] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: -300, y: -300 });
   const [cursorBig, setCursorBig] = useState(false);
 
   useEffect(() => {
-    // Safe: only runs client-side inside useEffect
     const token = new URLSearchParams(window.location.search).get("token");
-    if (token) {
-      setQrToken(token);
-    } else {
-      showToast("QR token required. Please scan again.");
-    }
+    if (token) setQrToken(token);
+    else showToast("QR token required. Please scan again.");
 
     setTimeout(() => setEntered(true), 80);
 
     const iv = setInterval(() => setSlideIdx(p => (p + 1) % SLIDES.length), 5000);
-
-    const onMove = (e: MouseEvent) => setCursorPos({ x: e.clientX, y: e.clientY });
+    const onMove = e => setCursorPos({ x: e.clientX, y: e.clientY });
     window.addEventListener("mousemove", onMove);
-
-    return () => {
-      clearInterval(iv);
-      window.removeEventListener("mousemove", onMove);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { clearInterval(iv); window.removeEventListener("mousemove", onMove); };
   }, []);
 
-  const showToast = (msg: string, type: "error" | "success" = "error") => {
+  const showToast = (msg, type = "error") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
+  /* ── Updated Submit: new base URL + response structure res.data ── */
   const handleSubmit = async () => {
     const trimName = name.trim();
     const trimMobile = mobile.trim();
@@ -191,26 +155,22 @@ export default function CustomerDetails() {
       });
       const res = await response.json();
 
+      // Handle both new {success, data} and legacy flat structure
       if (!response.ok) throw new Error(res?.message || "Login failed");
       if (!res.success) throw new Error(res?.message || "Login failed");
 
-      // Handle both new {success, data} and legacy flat structures
-      const data = res.data ?? res;
+      const data = res.data ?? res; // use res.data if present, else fall back
 
-      // Guard localStorage with typeof check for safety
-      if (typeof window !== "undefined") {
-        if (data?.token)       localStorage.setItem("customerJWT",    data.token);
-        if (data?.customerId)  localStorage.setItem("customerId",     data.customerId.toString());
-        if (data?.tableNumber) localStorage.setItem("tableNumber",    data.tableNumber.toString());
-        localStorage.setItem("customerName",   trimName);
-        localStorage.setItem("customerMobile", trimMobile);
-      }
+      if (data?.token)       localStorage.setItem("customerJWT",    data.token);
+      if (data?.customerId)  localStorage.setItem("customerId",     data.customerId.toString());
+      if (data?.tableNumber) localStorage.setItem("tableNumber",    data.tableNumber.toString());
+      localStorage.setItem("customerName",   trimName);
+      localStorage.setItem("customerMobile", trimMobile);
 
       showToast("Welcome! Entering your royal experience…", "success");
       setTimeout(() => router.push("/customer/menu"), 1500);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Server error. Try again.";
-      showToast(message);
+    } catch (err) {
+      showToast(err?.message || "Server error. Try again.");
       setLoading(false);
     }
   };
@@ -437,8 +397,7 @@ export default function CustomerDetails() {
                     onChange={e => setName(e.target.value)}
                     onFocus={() => setFocused("name")}
                     onBlur={() => setFocused(null)}
-                    onMouseEnter={ih}
-                    onMouseLeave={il}
+                    onMouseEnter={ih} onMouseLeave={il}
                   />
                   <div className="od-input-glow" />
                   <div className="od-input-check"><IconCheck size={11} /></div>
@@ -457,8 +416,7 @@ export default function CustomerDetails() {
                     onChange={e => setMobile(e.target.value.replace(/\D/g, ""))}
                     onFocus={() => setFocused("mobile")}
                     onBlur={() => setFocused(null)}
-                    onMouseEnter={ih}
-                    onMouseLeave={il}
+                    onMouseEnter={ih} onMouseLeave={il}
                   />
                   <div className="od-input-glow" />
                   <div className="od-input-check"><IconCheck size={11} /></div>
@@ -470,8 +428,7 @@ export default function CustomerDetails() {
               <button
                 className="od-submit"
                 onClick={handleSubmit}
-                onMouseEnter={ih}
-                onMouseLeave={il}
+                onMouseEnter={ih} onMouseLeave={il}
               >
                 <div className="od-submit-shine" />
                 <IconArrowRight size={16} />
