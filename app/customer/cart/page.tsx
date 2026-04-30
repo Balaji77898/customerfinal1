@@ -145,11 +145,12 @@ export default function CartPage() {
                 >
                   {item.image_url ? (
                     <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
+  src={item.image_url}
+  alt={item.name}
+  fill
+  sizes="90px"
+  style={{ objectFit: "cover" }}
+/>
                   ) : null}
                 </div>
 
