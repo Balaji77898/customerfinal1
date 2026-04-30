@@ -13,86 +13,33 @@ interface CartItem {
   qty: number;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
-
 export default function CartPage() {
   const router = useRouter();
-  const [cart, setCart]               = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Guest");
-  const [tableNumber, setTableNumber]   = useState("");
-  const [mounted, setMounted]           = useState(false);
-  const [syncing, setSyncing]           = useState(false);
+  const [sessionKey, setSessionKey] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  // ─── Load from localStorage on mount (key built directly, not from state) ───
   useEffect(() => {
-    const name  = localStorage.getItem("customerName") || "Guest";
-    const table = localStorage.getItem("tableNumber")  || "";
+    const name = localStorage.getItem("customerName") || "Guest";
+    const table = localStorage.getItem("tableNumber") || "";
     setCustomerName(name);
-    setTableNumber(table);
-
-    if (name && table) {
-      const key    = `currentCart_${table}_${name}`;
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        try { setCart(JSON.parse(stored)); } catch { /* ignore corrupt */ }
-      }
-    }
+    if (!name || !table) { setMounted(true); return; }
+    const key = `currentCart_${table}_${name}`;
+    setSessionKey(key);
+    const stored = localStorage.getItem(key);
+    setCart(stored ? JSON.parse(stored) : []);
     setMounted(true);
   }, []);
 
-  // ─── Always write with key built from localStorage directly ───
   const saveCart = (updated: CartItem[]) => {
     setCart(updated);
-    const name  = localStorage.getItem("customerName") || "";
-    const table = localStorage.getItem("tableNumber")  || "";
-    if (name && table) {
-      localStorage.setItem(`currentCart_${table}_${name}`, JSON.stringify(updated));
-    }
+    if (sessionKey) localStorage.setItem(sessionKey, JSON.stringify(updated));
   };
 
-  // ─── Sync cart to backend ───
-  const syncCartToBackend = async (items: CartItem[]) => {
-    const token = localStorage.getItem("customerJWT");
-    if (!token) return;
-    setSyncing(true);
-    try {
-      await fetch(`${BASE_URL}/api/customer/cart`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: items.map(i => ({
-            item_id: i.id,
-            qty: i.qty,
-          })),
-        }),
-      });
-    } catch (err) {
-      console.warn("Cart sync failed (non-critical):", err);
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const incQty = (id: string) => {
-    const u = cart.map(i => i.id === id ? { ...i, qty: i.qty + 1 } : i);
-    saveCart(u);
-    syncCartToBackend(u);
-  };
-
-  const decQty = (id: string) => {
-    const u = cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0);
-    saveCart(u);
-    syncCartToBackend(u);
-  };
-
-  const delItem = (id: string) => {
-    const u = cart.filter(i => i.id !== id);
-    saveCart(u);
-    syncCartToBackend(u);
-  };
+  const incQty  = (id: string) => saveCart(cart.map(i => i.id === id ? { ...i, qty: i.qty + 1 } : i));
+  const decQty  = (id: string) => saveCart(cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0));
+  const delItem = (id: string) => saveCart(cart.filter(i => i.id !== id));
 
   const subtotal = cart.reduce((s, i) => s + parseFloat(i.price) * i.qty, 0);
 
@@ -140,23 +87,16 @@ export default function CartPage() {
         .back-btn:hover{background:rgba(30,5,8,.8);border-color:var(--g);transform:translateX(-2px);}
         .back-btn:active{transform:scale(.96);}
 
-        .hdr-title{flex:1;text-align:center;}
-        .hdr-title-text{font-family:var(--serif);font-style:italic;font-size:20px;color:#FFF8E1;}
-        .hdr-sub{font-family:var(--sans);font-size:10px;color:rgba(200,169,81,.6);letter-spacing:.16em;text-transform:uppercase;margin-top:1px;}
-
-        .sync-pill{
-          flex-shrink:0;
-          display:flex;align-items:center;gap:5px;
-          padding:5px 10px;border-radius:20px;
-          background:rgba(200,169,81,.12);border:1px solid rgba(200,169,81,.25);
-          font-family:var(--sans);font-size:10px;color:rgba(200,169,81,.7);
-          letter-spacing:.06em;
+        .hdr-title{
+          flex:1;text-align:center;
         }
-        @keyframes spin{to{transform:rotate(360deg);}}
-        .sync-dot{
-          width:6px;height:6px;border-radius:50%;
-          border:1.5px solid rgba(200,169,81,.4);border-top-color:var(--g);
-          animation:spin .6s linear infinite;
+        .hdr-title-text{
+          font-family:var(--serif);font-style:italic;font-size:20px;color:#FFF8E1;
+        }
+        .hdr-sub{
+          font-family:var(--sans);font-size:10px;
+          color:rgba(200,169,81,.6);letter-spacing:.16em;text-transform:uppercase;
+          margin-top:1px;
         }
 
         .hdr-spacer{flex-shrink:0;width:80px;}
@@ -326,15 +266,7 @@ export default function CartPage() {
               <p className="hdr-sub">{customerName}</p>
             </div>
 
-            {/* Sync indicator — shows while talking to backend */}
-            {syncing ? (
-              <div className="sync-pill">
-                <div className="sync-dot" />
-                saving
-              </div>
-            ) : (
-              <div className="hdr-spacer" />
-            )}
+            <div className="hdr-spacer" />
           </div>
           <div className="gl2" />
         </header>
@@ -425,7 +357,7 @@ export default function CartPage() {
                 <div className="total-row" key={item.id}>
                   <span>{item.name} × {item.qty}</span>
                   <span style={{ fontWeight: 600, color: "var(--c)" }}>
-                    ₹{(parseFloat(item.price) * item.qty).toFixed(0)}
+                    ₹{(parseFloat(item.price) * item.qty)}
                   </span>
                 </div>
               ))}
@@ -437,7 +369,8 @@ export default function CartPage() {
             </div>
           )}
         </div>
-        {/* FOOTER CTA */}
+
+        {/* FOOTER */}
         {cart.length > 0 && (
           <div className="cta-wrap">
             <div className="cta-inner">

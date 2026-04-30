@@ -18,8 +18,11 @@ export default function PaymentPage() {
     const name   = localStorage.getItem("customerName")   || "Guest";
     const mobile = localStorage.getItem("customerMobile") || "";
     const table  = localStorage.getItem("tableNumber")    || "1";
+
+    // Read cart using the same key pattern as cart page
     const cartKey = `currentCart_${table}_${name}`;
     const storedCart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+
     setCart(storedCart);
     setCustomer({ name, mobile, table });
   }, []);
@@ -52,7 +55,7 @@ export default function PaymentPage() {
         throw new Error(res?.message || "Order failed");
       }
 
-      // FIX: Try all possible field names for the order ID
+      // Extract order ID from all possible response shapes
       const orderId =
         res.data?.order_id   ??
         res.data?.id         ??
@@ -63,19 +66,16 @@ export default function PaymentPage() {
 
       console.log("✅ Placed order ID:", orderId);
 
-      if (!orderId) {
-        console.warn("⚠️ No order ID in response — check shape above");
-      }
-
-      // FIX: Save to localStorage BEFORE any state changes or navigation
+      // Save order ID to localStorage BEFORE clearing cart or navigating
       if (orderId) {
         localStorage.setItem("lastOrderId", String(orderId));
         setPlacedOrderId(String(orderId));
       }
 
-      // Clear cart after successful order
+      // Clear cart from localStorage after successful order
       const cartKey = `currentCart_${customer.table}_${customer.name}`;
       localStorage.removeItem(cartKey);
+      setCart([]);
 
       setShowConfirm(true);
     } catch (error: any) {
@@ -87,7 +87,7 @@ export default function PaymentPage() {
   };
 
   const goToTracking = () => {
-    // FIX: Double-ensure lastOrderId is saved before navigating
+    // Ensure lastOrderId is persisted before navigating
     if (placedOrderId) {
       localStorage.setItem("lastOrderId", placedOrderId);
     }
@@ -145,6 +145,30 @@ export default function PaymentPage() {
         .eyebrow{font-family:var(--sans);font-size:10px;font-weight:600;color:rgba(200,169,81,.65);letter-spacing:.18em;text-transform:uppercase;margin-bottom:2px;}
         .sec-title{font-family:var(--serif);font-style:italic;font-size:22px;color:var(--c);}
         .rule{height:1px;margin:8px 0 16px;background:linear-gradient(90deg,transparent,rgba(200,169,81,.38),transparent);}
+
+        /* Empty cart state on payment page */
+        .empty{
+          display:flex;flex-direction:column;align-items:center;justify-content:center;
+          min-height:55vh;gap:16px;
+          animation:fadeUp .6s cubic-bezier(.23,1,.32,1) both;
+        }
+        .empty-icon{
+          width:96px;height:96px;border-radius:50%;
+          background:linear-gradient(135deg,rgba(200,169,81,.15),rgba(212,183,110,.1));
+          border:2px solid rgba(200,169,81,.25);
+          display:flex;align-items:center;justify-content:center;
+        }
+        .empty-title{font-family:var(--serif);font-style:italic;font-size:24px;color:var(--c);}
+        .empty-sub{font-family:var(--sans);font-size:13px;color:rgba(93,22,22,.55);text-align:center;}
+        .empty-btn{
+          padding:12px 28px;border-radius:12px;border:none;cursor:pointer;
+          background:linear-gradient(135deg,var(--cm),var(--c));
+          color:var(--g);font-family:var(--sans);font-size:13px;font-weight:700;
+          letter-spacing:.06em;
+          transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;
+          box-shadow:0 6px 20px rgba(93,22,22,.25);
+        }
+        .empty-btn:hover{transform:scale(1.05);}
 
         .summary-card{
           background:var(--card);border:1.5px solid rgba(200,169,81,.2);
@@ -214,14 +238,15 @@ export default function PaymentPage() {
           transition:transform .3s,box-shadow .3s,background-position .4s;
           position:relative;overflow:hidden;
         }
+        .confirm-btn:disabled{opacity:.6;cursor:not-allowed;}
         .confirm-btn::after{
           content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
           background:linear-gradient(90deg,transparent,rgba(134,239,172,.1),transparent);
           transition:left .7s cubic-bezier(.23,1,.32,1);
         }
-        .confirm-btn:hover::after{left:150%;}
-        .confirm-btn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(20,83,45,.45);background-position:right center;}
-        .confirm-btn:active{transform:scale(.98);}
+        .confirm-btn:hover:not(:disabled)::after{left:150%;}
+        .confirm-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 36px rgba(20,83,45,.45);background-position:right center;}
+        .confirm-btn:active:not(:disabled){transform:scale(.98);}
         .confirm-lbl{font-family:var(--sans);font-size:15px;font-weight:700;color:#fff;letter-spacing:.06em;}
 
         .loading-overlay{
@@ -256,7 +281,7 @@ export default function PaymentPage() {
         @keyframes popIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
         .confirm-title{font-family:var(--serif);font-style:italic;font-size:32px;color:#fff;text-align:center;animation:fadeUp .6s .2s both;}
         .confirm-sub{font-family:var(--sans);font-size:14px;color:rgba(255,255,255,.7);text-align:center;animation:fadeUp .6s .3s both;}
-        .confirm-btn2{
+        .confirm-track-btn{
           padding:14px 36px;border-radius:14px;border:none;cursor:pointer;
           background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);
           color:#fff;font-family:var(--sans);font-size:14px;font-weight:700;letter-spacing:.06em;
@@ -265,8 +290,8 @@ export default function PaymentPage() {
           animation:fadeUp .6s .45s both;
           transition:background .25s,transform .3s cubic-bezier(.34,1.56,.64,1);
         }
-        .confirm-btn2:hover{background:rgba(255,255,255,.25);transform:scale(1.04);}
-        .confirm-btn2:active{transform:scale(.97);}
+        .confirm-track-btn:hover{background:rgba(255,255,255,.25);transform:scale(1.04);}
+        .confirm-track-btn:active{transform:scale(.97);}
 
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
       `}</style>
@@ -293,43 +318,61 @@ export default function PaymentPage() {
         </header>
 
         {/* BODY */}
-        {cart.length > 0 && (
-          <div className="body" style={{ paddingTop: 22 }}>
-            <p className="eyebrow">Confirm Your Order</p>
-            <p className="sec-title">Order Summary</p>
-            <div className="rule" />
+        <div className="body" style={{ paddingTop: 22 }}>
 
-            <div className="summary-card">
-              <div className="cgline" />
-              <div className="summary-inner">
-                {cart.map((item, idx) => (
-                  <div key={idx} className="order-item" style={{ animationDelay:`${idx * 70}ms` }}>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <p className="order-item-name">{item.name}</p>
-                      <p className="order-item-qty">Qty: {item.qty}</p>
-                      {item.notes && <p className="order-item-note">&ldquo;{item.notes}&rdquo;</p>}
-                      {item.parcel && (
-                        <span className="order-item-parcel">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-                          </svg>
-                          Parcel
-                        </span>
-                      )}
-                    </div>
-                    <p className="order-item-price">
-                      ₹{(parseFloat(item.price) * item.qty + (item.parcel ? PARCEL_CHARGE * item.qty : 0)).toFixed(0)}
-                    </p>
-                  </div>
-                ))}
+          {/* Empty cart fallback */}
+          {cart.length === 0 && !showConfirm && (
+            <div className="empty">
+              <div className="empty-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(93,22,22,.35)" strokeWidth="1.5">
+                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/>
+                </svg>
               </div>
-              <div className="total-strip">
-                <span className="total-label">Total Amount</span>
-                <span className="total-amount">₹{subtotal.toFixed(0)}</span>
-              </div>
+              <p className="empty-title">Nothing to pay for</p>
+              <p className="empty-sub">Your cart is empty. Add some items first.</p>
+              <button className="empty-btn" onClick={() => router.push("/customer/menu")}>Browse Menu</button>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Order summary */}
+          {cart.length > 0 && (
+            <>
+              <p className="eyebrow">Confirm Your Order</p>
+              <p className="sec-title">Order Summary</p>
+              <div className="rule" />
+
+              <div className="summary-card">
+                <div className="cgline" />
+                <div className="summary-inner">
+                  {cart.map((item, idx) => (
+                    <div key={idx} className="order-item" style={{ animationDelay:`${idx * 70}ms` }}>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <p className="order-item-name">{item.name}</p>
+                        <p className="order-item-qty">Qty: {item.qty}</p>
+                        {item.notes && <p className="order-item-note">&ldquo;{item.notes}&rdquo;</p>}
+                        {item.parcel && (
+                          <span className="order-item-parcel">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+                            </svg>
+                            Parcel
+                          </span>
+                        )}
+                      </div>
+                      <p className="order-item-price">
+                        ₹{(parseFloat(item.price) * item.qty + (item.parcel ? PARCEL_CHARGE * item.qty : 0)).toFixed(0)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div className="total-strip">
+                  <span className="total-label">Total Amount</span>
+                  <span className="total-amount">₹{subtotal.toFixed(0)}</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
 
         {/* ACTION BUTTONS */}
         {cart.length > 0 && !showConfirm && (
@@ -348,7 +391,7 @@ export default function PaymentPage() {
           </div>
         )}
 
-        {/* LOADING */}
+        {/* LOADING OVERLAY */}
         {loading && (
           <div className="loading-overlay">
             <div className="spinner-ring" />
@@ -357,7 +400,7 @@ export default function PaymentPage() {
           </div>
         )}
 
-        {/* CONFIRMATION — FIX: use goToTracking() to ensure ID is saved before navigation */}
+        {/* SUCCESS OVERLAY */}
         {showConfirm && (
           <div className="confirm-overlay">
             <div className="confirm-check">
@@ -367,7 +410,7 @@ export default function PaymentPage() {
             </div>
             <p className="confirm-title">Order Confirmed!</p>
             <p className="confirm-sub">Thank you — your dishes are being prepared</p>
-            <button className="confirm-btn2" onClick={goToTracking}>
+            <button className="confirm-track-btn" onClick={goToTracking}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
               </svg>
