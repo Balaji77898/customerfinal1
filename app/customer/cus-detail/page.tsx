@@ -199,12 +199,24 @@ export default function CustomerDetails() {
 
       // Guard localStorage with typeof check for safety
       if (typeof window !== "undefined") {
-        if (data?.token)       localStorage.setItem("customerJWT",    data.token);
-        if (data?.customerId)  localStorage.setItem("customerId",     data.customerId.toString());
-        if (data?.tableNumber) localStorage.setItem("tableNumber",    data.tableNumber.toString());
-        localStorage.setItem("customerName",   trimName);
-        localStorage.setItem("customerMobile", trimMobile);
-      }
+  if (data?.token) {
+    localStorage.setItem("customerJWT", data.token);
+
+    // IMPORTANT: this is what middleware reads
+    document.cookie = `customerJWT=${data.token}; path=/; max-age=86400; samesite=lax`;
+  }
+
+  if (data?.customerId) {
+    localStorage.setItem("customerId", data.customerId.toString());
+  }
+
+  if (data?.tableNumber) {
+    localStorage.setItem("tableNumber", data.tableNumber.toString());
+  }
+
+  localStorage.setItem("customerName", trimName);
+  localStorage.setItem("customerMobile", trimMobile);
+}
 
       showToast("Welcome! Entering your royal experience…", "success");
       setTimeout(() => router.push("/customer/menu"), 1500);

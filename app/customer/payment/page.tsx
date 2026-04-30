@@ -15,17 +15,28 @@ export default function PaymentPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
-  const name   = localStorage.getItem("customerName")   || "Guest";
-  const mobile = localStorage.getItem("customerMobile") || "";
-  const table  = localStorage.getItem("tableNumber")    || "1";
+  const token = localStorage.getItem("customerJWT");
+const name = localStorage.getItem("customerName") || "Guest";
+const mobile = localStorage.getItem("customerMobile") || "";
+const table = localStorage.getItem("tableNumber") || "";
+
+if (!token || !table) {
+  router.push("/customer/login");
+  return;
+}
 
   const cartKey = `currentCart_${table}_${name}`;
   const stored = localStorage.getItem(cartKey);
 
   console.log("🧾 LOCALSTORAGE RAW CART STRING:", stored);
 
-  const storedCart = JSON.parse(stored || "[]");
+let storedCart = [];
 
+try {
+  storedCart = JSON.parse(stored || "[]");
+} catch {
+  storedCart = [];
+}
   console.log("📦 PARSED CART FROM LOCALSTORAGE:", storedCart);
 
   setCart(storedCart);

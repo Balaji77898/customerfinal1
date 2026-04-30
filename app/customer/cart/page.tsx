@@ -18,7 +18,6 @@ export default function CartPage() {
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Guest");
-  const [sessionKey, setSessionKey] = useState("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -30,16 +29,14 @@ export default function CartPage() {
 
   setCustomerName(name);
 
-  if (!table) {
-    console.log("No table number found");
-    setMounted(true);
-    return;
-  }
+  const token = localStorage.getItem("customerJWT");
 
+if (!token || !table) {
+  router.push("/customer/login");
+  return;
+}
   const key = `currentCart_${table}_${name}`;
   console.log("Generated Cart Key:", key);
-
-  setSessionKey(key);
 
   const stored = localStorage.getItem(key);
 
@@ -60,36 +57,21 @@ export default function CartPage() {
   setMounted(true);
 }, []);
 
-useEffect(() => {
-  if (!sessionKey) return;
-
-  const interval = setInterval(() => {
-    const stored = localStorage.getItem(sessionKey);
-    if (stored) {
-      try {
-        setCart(JSON.parse(stored));
-      } catch (e) {
-        console.log("parse error");
-      }
-    }
-  }, 2000);
-
-  return () => clearInterval(interval);
-}, [sessionKey]);
-
  const saveCart = (updated: CartItem[]) => {
   setCart(updated);
 
-  if (!sessionKey) {
-    console.log("Session key missing. Cart NOT saved");
-    return;
-  }
+  const name =
+    localStorage.getItem("customerName") || customerName || "Guest";
 
-  localStorage.setItem(sessionKey, JSON.stringify(updated));
+  const table =
+    localStorage.getItem("tableNumber") || "1";
 
-  console.log("Cart saved successfully");
-  console.log("Saved Key:", sessionKey);
-  console.log("Saved Cart Data:", updated);
+  const cartKey = `currentCart_${table}_${name}`;
+
+  console.log("Saving cart to:", cartKey);
+  console.log("Updated cart:", updated);
+
+  localStorage.setItem(cartKey, JSON.stringify(updated));
 };
 
   const incQty = (id: string) => {

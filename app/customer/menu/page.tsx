@@ -31,10 +31,6 @@ export default function MenuPage() {
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer   = useRef<IntersectionObserver | null>(null);
 
-  const sessionKey = useMemo(() =>
-    customerName && tableNumber ? `currentCart_${tableNumber}_${customerName}` : ""
-  , [customerName, tableNumber]);
-
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 8);
     window.addEventListener("scroll", fn, { passive: true });
@@ -124,18 +120,20 @@ export default function MenuPage() {
   }, []);
 
   const saveCart = (u: CartItem[]) => {
-  console.log("Saving cart...");
-  console.log("Session key:", sessionKey);
-  console.log("Cart data:", u);
-
   setCart(u);
 
-  if (sessionKey) {
-    localStorage.setItem(sessionKey, JSON.stringify(u));
-    console.log("Cart saved to localStorage");
-  } else {
-    console.log("No session key found");
-  }
+  const name =
+    localStorage.getItem("customerName") || customerName || "Guest";
+
+  const table =
+    localStorage.getItem("tableNumber") || tableNumber || "1";
+
+  const cartKey = `currentCart_${table}_${name}`;
+
+  console.log("Saving cart to:", cartKey);
+  console.log("Cart:", u);
+
+  localStorage.setItem(cartKey, JSON.stringify(u));
 };
 
   const addItem = (item: FoodItem) => {

@@ -8,6 +8,7 @@ import {
   JSX,
   RefObject
 } from "react";
+import { getSession, saveSession } from "@/app/utils/session";
 /* ─── SVG Icon System ─── */
 type IconProps = React.SVGProps<SVGSVGElement>;
 
@@ -138,19 +139,7 @@ export default function SpiceDelightLuxury() {
 };
 
   // Safe navigation: only accesses window inside useCallback (called client-side)
-  const navigate = useCallback((path = "/customer/cus-detail") => {
-  if (typeof window === "undefined") return;
-
-  const p = new URLSearchParams(window.location.search);
-    const token = p.get("token");
-    const table = p.get("table") || p.get("tableNo") || p.get("tableNumber");
-    let dest = path;
-    const ex: string[] = [];
-    if (token) ex.push(`token=${token}`);
-    if (table) ex.push(`table=${table}`);
-    if (ex.length) dest += `?${ex.join("&")}`;
-    router.push(dest);
-  }, [router]);
+ 
 
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
@@ -171,31 +160,52 @@ export default function SpiceDelightLuxury() {
   const [revRef, revVis]     = useReveal(0.05);
   const [ctaRef, ctaVis]     = useReveal(0.04);
 
+const navigate = useCallback(() => {
+  if (!tableInfo?.token) return;
+
+  let url = `/customer/cus-detail?token=${tableInfo.token}`;
+
+  if (tableInfo.table) {
+    url += `&tableNumber=${tableInfo.table}`;
+  }
+
+  router.push(url);
+}, [router, tableInfo]);
+
+
   // All window/localStorage access inside useEffect — SSR safe
- useEffect(() => {
-const search = window?.location?.search || "";
-const p = new URLSearchParams(search);
-  const tokenFromUrl = p.get("token");
-  const tableFromUrl =
-    p.get("table") || p.get("tableNo") || p.get("tableNumber");
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
 
-  // fallback to localStorage
- const token =
-  tokenFromUrl || sessionStorage.getItem("token");
+  const token =
+    params.get("token");
 
-const table =
-  tableFromUrl || sessionStorage.getItem("tableNumber");
+  const table =
+    params.get("table") ||
+    params.get("tableNo") ||
+    params.get("tableNumber");
 
-  // persist again (so refresh keeps working)
-  if (typeof window !== "undefined") {
-  if (token) sessionStorage.setItem("token", token);
-  if (table) sessionStorage.setItem("tableNumber", table);
-}
-  if (token || table) {
-setTableInfo({
-  token: token ?? null,
-  table: table ?? null
-});  }
+  if (!token) {
+    console.error("Missing token");
+    return;
+  }
+
+  const existingSession = getSession();
+
+  const session = {
+    token,
+    tableNumber: table || null,
+    user: existingSession?.user || null,
+    cart: existingSession?.cart || [],
+    orderId: existingSession?.orderId || null,
+  };
+
+  saveSession(session);
+
+  setTableInfo({
+    token: session.token,
+    table: session.tableNumber,
+  });
 }, []);
 
   useEffect(() => {
