@@ -15,42 +15,58 @@ interface CartItem {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 
+// ─── Stable helpers — always read key from localStorage directly, never from state ───
+const getCartKey = (): string | null => {
+  if (typeof window === "undefined") return null;
+  const name  = localStorage.getItem("customerName") || "";
+  const table = localStorage.getItem("tableNumber")  || "";
+  return name && table ? `currentCart_${table}_${name}` : null;
+};
+
+const readCart = (): CartItem[] => {
+  const key = getCartKey();
+  if (!key) return [];
+  try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; }
+};
+
+const writeCart = (items: CartItem[]) => {
+  const key = getCartKey();
+  if (key) localStorage.setItem(key, JSON.stringify(items));
+};
+
 export default function CartPage() {
   const router = useRouter();
   const [cart, setCart]               = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Guest");
-  const [tableNumber, setTableNumber]   = useState("");
   const [mounted, setMounted]           = useState(false);
   const [syncing, setSyncing]           = useState(false);
 
-  // ─── Load from localStorage on mount (key built directly, not from state) ───
+  // FIX: Read cart key directly from localStorage — NOT from React state.
+  // Previously: key was built from state variables that were "" on first render.
+  // Now: we read name/table fresh from localStorage inside the effect itself.
   useEffect(() => {
     const name  = localStorage.getItem("customerName") || "Guest";
-    const table = localStorage.getItem("tableNumber")  || "";
     setCustomerName(name);
-    setTableNumber(table);
 
-    if (name && table) {
-      const key    = `currentCart_${table}_${name}`;
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        try { setCart(JSON.parse(stored)); } catch { /* ignore corrupt */ }
-      }
+    // Build key directly here — state isn't ready yet so don't use it
+    const table = localStorage.getItem("tableNumber") || "";
+    const key   = name && table ? `currentCart_${table}_${name}` : null;
+
+    if (key) {
+      try {
+        const stored = localStorage.getItem(key);
+        if (stored) setCart(JSON.parse(stored));
+      } catch { /* ignore corrupt data */ }
     }
     setMounted(true);
   }, []);
 
-  // ─── Always write with key built from localStorage directly ───
+  // FIX: saveCart uses the stable writeCart helper (reads localStorage directly)
   const saveCart = (updated: CartItem[]) => {
+    writeCart(updated);
     setCart(updated);
-    const name  = localStorage.getItem("customerName") || "";
-    const table = localStorage.getItem("tableNumber")  || "";
-    if (name && table) {
-      localStorage.setItem(`currentCart_${table}_${name}`, JSON.stringify(updated));
-    }
   };
 
-  // ─── Sync cart to backend ───
   const syncCartToBackend = async (items: CartItem[]) => {
     const token = localStorage.getItem("customerJWT");
     if (!token) return;
@@ -63,10 +79,7 @@ export default function CartPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          items: items.map(i => ({
-            item_id: i.id,
-            qty: i.qty,
-          })),
+          items: items.map(i => ({ item_id: i.id, qty: i.qty })),
         }),
       });
     } catch (err) {
@@ -77,21 +90,27 @@ export default function CartPage() {
   };
 
   const incQty = (id: string) => {
-    const u = cart.map(i => i.id === id ? { ...i, qty: i.qty + 1 } : i);
-    saveCart(u);
-    syncCartToBackend(u);
+    // FIX: always read fresh from storage before mutating
+    const current = readCart();
+    const updated = current.map(i => i.id === id ? { ...i, qty: i.qty + 1 } : i);
+    saveCart(updated);
+    syncCartToBackend(updated);
   };
 
   const decQty = (id: string) => {
-    const u = cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0);
-    saveCart(u);
-    syncCartToBackend(u);
+    const current = readCart();
+    const updated = current
+      .map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i)
+      .filter(i => i.qty > 0);
+    saveCart(updated);
+    syncCartToBackend(updated);
   };
 
   const delItem = (id: string) => {
-    const u = cart.filter(i => i.id !== id);
-    saveCart(u);
-    syncCartToBackend(u);
+    const current = readCart();
+    const updated = current.filter(i => i.id !== id);
+    saveCart(updated);
+    syncCartToBackend(updated);
   };
 
   const subtotal = cart.reduce((s, i) => s + parseFloat(i.price) * i.qty, 0);
@@ -326,7 +345,6 @@ export default function CartPage() {
               <p className="hdr-sub">{customerName}</p>
             </div>
 
-            {/* Sync indicator — shows while talking to backend */}
             {syncing ? (
               <div className="sync-pill">
                 <div className="sync-dot" />
