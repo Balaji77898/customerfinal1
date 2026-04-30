@@ -21,27 +21,92 @@ export default function CartPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const name = localStorage.getItem("customerName") || "Guest";
-    const table = localStorage.getItem("tableNumber") || "";
-    setCustomerName(name);
-    if (!name || !table) { setMounted(true); return; }
-    const key = `currentCart_${table}_${name}`;
-    setSessionKey(key);
-    const stored = localStorage.getItem(key);
-    setCart(stored ? JSON.parse(stored) : []);
+  const name = localStorage.getItem("customerName") || "Guest";
+  const table = localStorage.getItem("tableNumber") || "";
+
+  console.log("Customer Name:", name);
+  console.log("Table Number:", table);
+
+  setCustomerName(name);
+
+  if (!table) {
+    console.log("No table number found");
     setMounted(true);
-  }, []);
+    return;
+  }
 
-  const saveCart = (updated: CartItem[]) => {
-    setCart(updated);
-    if (sessionKey) localStorage.setItem(sessionKey, JSON.stringify(updated));
-  };
+  const key = `currentCart_${table}_${name}`;
+  console.log("Generated Cart Key:", key);
 
-  const incQty  = (id: string) => saveCart(cart.map(i => i.id === id ? { ...i, qty: i.qty + 1 } : i));
-  const decQty  = (id: string) => saveCart(cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0));
-  const delItem = (id: string) => saveCart(cart.filter(i => i.id !== id));
+  setSessionKey(key);
+
+  const stored = localStorage.getItem(key);
+
+  if (stored) {
+    try {
+      const parsedCart = JSON.parse(stored);
+      console.log("Cart loaded from localStorage:", parsedCart);
+      setCart(parsedCart);
+    } catch (error) {
+      console.log("Cart JSON parse failed:", error);
+      setCart([]);
+    }
+  } else {
+    console.log("No saved cart found for key:", key);
+    setCart([]);
+  }
+
+  setMounted(true);
+}, []);
+
+ const saveCart = (updated: CartItem[]) => {
+  setCart(updated);
+
+  if (!sessionKey) {
+    console.log("Session key missing. Cart NOT saved");
+    return;
+  }
+
+  localStorage.setItem(sessionKey, JSON.stringify(updated));
+
+  console.log("Cart saved successfully");
+  console.log("Saved Key:", sessionKey);
+  console.log("Saved Cart Data:", updated);
+};
+
+  const incQty = (id: string) => {
+  console.log("Increasing qty for item:", id);
+
+  saveCart(
+    cart.map((i) =>
+      i.id === id ? { ...i, qty: i.qty + 1 } : i
+    )
+  );
+};
+
+const decQty = (id: string) => {
+  console.log("Decreasing qty for item:", id);
+
+  saveCart(
+    cart
+      .map((i) =>
+        i.id === id ? { ...i, qty: i.qty - 1 } : i
+      )
+      .filter((i) => i.qty > 0)
+  );
+};
+
+const delItem = (id: string) => {
+  console.log("Deleting item:", id);
+
+  saveCart(cart.filter((i) => i.id !== id));
+};
 
   const subtotal = cart.reduce((s, i) => s + parseFloat(i.price) * i.qty, 0);
+
+  console.log("Current cart state:", cart);
+console.log("Subtotal:", subtotal);
+console.log("Mounted:", mounted);
 
   return (
     <>
