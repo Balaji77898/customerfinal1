@@ -124,18 +124,47 @@ export default function MenuPage() {
   }, []);
 
   const saveCart = (u: CartItem[]) => {
-    setCart(u);
-    if (sessionKey) localStorage.setItem(sessionKey, JSON.stringify(u));
-  };
+  console.log("Saving cart...");
+  console.log("Session key:", sessionKey);
+  console.log("Cart data:", u);
+
+  setCart(u);
+
+  if (sessionKey) {
+    localStorage.setItem(sessionKey, JSON.stringify(u));
+    console.log("Cart saved to localStorage");
+  } else {
+    console.log("No session key found");
+  }
+};
 
   const addItem = (item: FoodItem) => {
-    const u = [...cart], i = u.findIndex(x => x.id === item.id);
-    if (i >= 0) u[i].qty += 1;
-    else u.push({ ...item, image_url: item.image_url || null, qty: 1, parcel: false, notes: "" });
-    saveCart(u);
-    showToast(`${item.name} added`);
-  };
+  console.log("ADD CLICKED:", item);
 
+  const u = [...cart];
+  const i = u.findIndex((x) => x.id === item.id);
+
+  if (i >= 0) {
+    u[i].qty += 1;
+    console.log("Increased quantity:", u[i]);
+  } else {
+    const newItem = {
+      ...item,
+      image_url: item.image_url || null,
+      qty: 1,
+      parcel: false,
+      notes: "",
+    };
+
+    u.push(newItem);
+    console.log("Added new item:", newItem);
+  }
+
+  console.log("Updated cart before save:", u);
+
+  saveCart(u);
+  showToast(`${item.name} added`);
+};
   const removeItem = (id: string) =>
     saveCart(cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0));
 

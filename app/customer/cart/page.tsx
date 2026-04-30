@@ -14,6 +14,7 @@ interface CartItem {
 }
 
 export default function CartPage() {
+
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState("Guest");
@@ -58,6 +59,23 @@ export default function CartPage() {
 
   setMounted(true);
 }, []);
+
+useEffect(() => {
+  if (!sessionKey) return;
+
+  const interval = setInterval(() => {
+    const stored = localStorage.getItem(sessionKey);
+    if (stored) {
+      try {
+        setCart(JSON.parse(stored));
+      } catch (e) {
+        console.log("parse error");
+      }
+    }
+  }, 2000);
+
+  return () => clearInterval(interval);
+}, [sessionKey]);
 
  const saveCart = (updated: CartItem[]) => {
   setCart(updated);

@@ -1,7 +1,13 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useCallback, JSX } from "react";
-
+import {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  JSX,
+  RefObject
+} from "react";
 /* ─── SVG Icon System ─── */
 type IconProps = React.SVGProps<SVGSVGElement>;
 
@@ -58,7 +64,7 @@ const STRIP_IMGS = [
 ];
 
 /* ─── Scroll reveal hook ─── */
-function useReveal(threshold = 0.08): [React.RefObject<HTMLElement | null>, boolean] {
+function useReveal(threshold = 0.08): [RefObject<HTMLElement | null>, boolean]{
   const ref = useRef<HTMLElement | null>(null);
   const [vis, setVis] = useState(false);
   useEffect(() => {
@@ -127,10 +133,15 @@ interface TableInfo { token: string | null; table: string | null; }
 /* ══════════════════════════════════════════════ */
 export default function SpiceDelightLuxury() {
   const router = useRouter();
+  const isValidToken = (t: string | null) => {
+  return !!t && t.length > 10;
+};
 
   // Safe navigation: only accesses window inside useCallback (called client-side)
   const navigate = useCallback((path = "/customer/cus-detail") => {
-    const p = new URLSearchParams(window.location.search);
+  if (typeof window === "undefined") return;
+
+  const p = new URLSearchParams(window.location.search);
     const token = p.get("token");
     const table = p.get("table") || p.get("tableNo") || p.get("tableNumber");
     let dest = path;
@@ -161,12 +172,31 @@ export default function SpiceDelightLuxury() {
   const [ctaRef, ctaVis]     = useReveal(0.04);
 
   // All window/localStorage access inside useEffect — SSR safe
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const token = p.get("token");
-    const table = p.get("table") || p.get("tableNo");
-    if (token || table) setTableInfo({ token, table });
-  }, []);
+ useEffect(() => {
+const search = window?.location?.search || "";
+const p = new URLSearchParams(search);
+  const tokenFromUrl = p.get("token");
+  const tableFromUrl =
+    p.get("table") || p.get("tableNo") || p.get("tableNumber");
+
+  // fallback to localStorage
+ const token =
+  tokenFromUrl || sessionStorage.getItem("token");
+
+const table =
+  tableFromUrl || sessionStorage.getItem("tableNumber");
+
+  // persist again (so refresh keeps working)
+  if (typeof window !== "undefined") {
+  if (token) sessionStorage.setItem("token", token);
+  if (table) sessionStorage.setItem("tableNumber", table);
+}
+  if (token || table) {
+setTableInfo({
+  token: token ?? null,
+  table: table ?? null
+});  }
+}, []);
 
   useEffect(() => {
     const t = setTimeout(() => { setLoading(false); setTimeout(() => setRevealed(true), 40); }, 1400);

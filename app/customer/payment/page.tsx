@@ -15,17 +15,22 @@ export default function PaymentPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
-    const name   = localStorage.getItem("customerName")   || "Guest";
-    const mobile = localStorage.getItem("customerMobile") || "";
-    const table  = localStorage.getItem("tableNumber")    || "1";
+  const name   = localStorage.getItem("customerName")   || "Guest";
+  const mobile = localStorage.getItem("customerMobile") || "";
+  const table  = localStorage.getItem("tableNumber")    || "1";
 
-    // Read cart using the same key pattern as cart page
-    const cartKey = `currentCart_${table}_${name}`;
-    const storedCart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+  const cartKey = `currentCart_${table}_${name}`;
+  const stored = localStorage.getItem(cartKey);
 
-    setCart(storedCart);
-    setCustomer({ name, mobile, table });
-  }, []);
+  console.log("🧾 LOCALSTORAGE RAW CART STRING:", stored);
+
+  const storedCart = JSON.parse(stored || "[]");
+
+  console.log("📦 PARSED CART FROM LOCALSTORAGE:", storedCart);
+
+  setCart(storedCart);
+  setCustomer({ name, mobile, table });
+}, []);
 
   const placeOrder = async () => {
     if (!cart.length) return alert("Cart is empty");
