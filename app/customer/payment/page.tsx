@@ -6,48 +6,72 @@ import { useRouter } from "next/navigation";
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 const PARCEL_CHARGE = 20;
 
+const getToken = () =>
+  typeof window !== "undefined" ? localStorage.getItem("customerJWT") : null;
+
 export default function PaymentPage() {
   const router = useRouter();
   const [cart, setCart]         = useState<any[]>([]);
   const [customer, setCustomer] = useState({ name: "", mobile: "", table: "" });
   const [loading, setLoading]   = useState(false);
+  const [cartLoading, setCartLoading] = useState(true);
   const [showConfirm, setShowConfirm] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
 
+  // ── fetch cart from API (same as CartPage) ──
+  const fetchCart = async () => {
+    const token = getToken();
+    if (!token) { router.push("/customer/scan-qr"); return; }
+
+    try {
+      const res  = await fetch(`${BASE_URL}/api/customer/cart`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      console.log("🛒 Payment cart API response:", JSON.stringify(json, null, 2));
+
+      if (!res.ok || !json.success) throw new Error(json?.message || "Failed to fetch cart");
+
+      const rawItems: any[] = json.data?.items ?? json.data ?? json.items ?? [];
+      const items = rawItems.map((i: any) => ({
+        id:          i.menu_item_id ?? i.id ?? i.item_id,
+        name:        i.name         ?? i.item_name ?? i.menu_item?.name ?? "",
+        description: i.description  ?? i.menu_item?.description ?? "",
+        price:       String(i.price ?? i.unit_price ?? i.menu_item?.price ?? 0),
+        image_url:   i.image_url    ?? i.menu_item?.image_url ?? null,
+        qty:         i.quantity     ?? i.qty ?? 1,
+        notes:       i.notes        ?? i.note ?? "",
+        parcel:      i.parcel       ?? false,
+      }));
+
+      setCart(items);
+    } catch (err: any) {
+      console.error("Cart fetch error:", err);
+    } finally {
+      setCartLoading(false);
+    }
+  };
+
   useEffect(() => {
-  const token = localStorage.getItem("customerJWT");
-const name = localStorage.getItem("customerName") || "Guest";
-const mobile = localStorage.getItem("customerMobile") || "";
-const table = localStorage.getItem("tableNumber") || "";
+    const token  = localStorage.getItem("customerJWT");
+    const name   = localStorage.getItem("customerName")  || "Guest";
+    const mobile = localStorage.getItem("customerMobile") || "";
+    const table  = localStorage.getItem("tableNumber")    || "";
 
-if (!token || !table) {
-  router.push("/customer/login");
-  return;
-}
+    if (!token || !table) {
+      router.push("/customer/login");
+      return;
+    }
 
-  const cartKey = `currentCart_${table}_${name}`;
-  const stored = localStorage.getItem(cartKey);
-
-  console.log("🧾 LOCALSTORAGE RAW CART STRING:", stored);
-
-let storedCart = [];
-
-try {
-  storedCart = JSON.parse(stored || "[]");
-} catch {
-  storedCart = [];
-}
-  console.log("📦 PARSED CART FROM LOCALSTORAGE:", storedCart);
-
-  setCart(storedCart);
-  setCustomer({ name, mobile, table });
-}, []);
+    setCustomer({ name, mobile, table });
+    fetchCart();
+  }, []);
 
   const placeOrder = async () => {
     if (!cart.length) return alert("Cart is empty");
     try {
       setLoading(true);
-      const token = localStorage.getItem("customerJWT");
+      const token = getToken();
       if (!token) {
         alert("Session expired. Please login again.");
         return;
@@ -71,7 +95,6 @@ try {
         throw new Error(res?.message || "Order failed");
       }
 
-      // Extract order ID from all possible response shapes
       const orderId =
         res.data?.order_id   ??
         res.data?.id         ??
@@ -82,17 +105,12 @@ try {
 
       console.log("✅ Placed order ID:", orderId);
 
-      // Save order ID to localStorage BEFORE clearing cart or navigating
       if (orderId) {
         localStorage.setItem("lastOrderId", String(orderId));
         setPlacedOrderId(String(orderId));
       }
 
-      // Clear cart from localStorage after successful order
-      const cartKey = `currentCart_${customer.table}_${customer.name}`;
-      localStorage.removeItem(cartKey);
       setCart([]);
-
       setShowConfirm(true);
     } catch (error: any) {
       console.error("❌ placeOrder error:", error);
@@ -103,7 +121,6 @@ try {
   };
 
   const goToTracking = () => {
-    // Ensure lastOrderId is persisted before navigating
     if (placedOrderId) {
       localStorage.setItem("lastOrderId", placedOrderId);
     }
@@ -162,7 +179,6 @@ try {
         .sec-title{font-family:var(--serif);font-style:italic;font-size:22px;color:var(--c);}
         .rule{height:1px;margin:8px 0 16px;background:linear-gradient(90deg,transparent,rgba(200,169,81,.38),transparent);}
 
-        /* Empty cart state on payment page */
         .empty{
           display:flex;flex-direction:column;align-items:center;justify-content:center;
           min-height:55vh;gap:16px;
@@ -310,6 +326,10 @@ try {
         .confirm-track-btn:active{transform:scale(.97);}
 
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+        /* cart loading spinner */
+        @keyframes spin{to{transform:rotate(360deg);}}
+        .spin{width:40px;height:40px;border-radius:50%;border:2px solid rgba(200,169,81,.18);border-top-color:var(--g);animation:spin .75s linear infinite;}
       `}</style>
 
       <div className="page" style={{ paddingBottom: cart.length > 0 && !showConfirm ? 140 : 28 }}>
@@ -336,8 +356,16 @@ try {
         {/* BODY */}
         <div className="body" style={{ paddingTop: 22 }}>
 
+          {/* Cart loading */}
+          {cartLoading && (
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"center", paddingTop:64, gap:16 }}>
+              <div className="spin" />
+              <p style={{ fontFamily:"var(--sans)", fontSize:11, color:"var(--c)", opacity:.55, letterSpacing:".16em" }}>LOADING ORDER…</p>
+            </div>
+          )}
+
           {/* Empty cart fallback */}
-          {cart.length === 0 && !showConfirm && (
+          {!cartLoading && cart.length === 0 && !showConfirm && (
             <div className="empty">
               <div className="empty-icon">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(93,22,22,.35)" strokeWidth="1.5">
@@ -351,7 +379,7 @@ try {
           )}
 
           {/* Order summary */}
-          {cart.length > 0 && (
+          {!cartLoading && cart.length > 0 && (
             <>
               <p className="eyebrow">Confirm Your Order</p>
               <p className="sec-title">Order Summary</p>
@@ -391,7 +419,7 @@ try {
         </div>
 
         {/* ACTION BUTTONS */}
-        {cart.length > 0 && !showConfirm && (
+        {!cartLoading && cart.length > 0 && !showConfirm && (
           <div className="actions-wrap">
             <div className="actions-inner">
               <button className="cancel-btn" onClick={() => router.push("/customer/menu")}>

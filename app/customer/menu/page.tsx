@@ -9,18 +9,17 @@ interface FoodItem {
   image_url: string | null; type?: "veg" | "nonveg";
 }
 interface Category { id: string; name: string; description: string; items: FoodItem[]; }
-interface CartItem extends FoodItem { qty: number; parcel: boolean; notes: string; }
 
-const BASE_URL = "https://pos-backend-s380.onrender.com";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 
 export default function MenuPage() {
   const router = useRouter();
   const [customerName, setCustomerName] = useState("Guest");
-  const [tableNumber, setTableNumber]   = useState("");
   const [categories, setCategories]     = useState<Category[]>([]);
   const [selectedCat, setSelectedCat]   = useState("All");
   const [search, setSearch]             = useState("");
-  const [cart, setCart]                 = useState<CartItem[]>([]);
+  const [totalQty, setTotalQty]         = useState(0);
+  const [addingId, setAddingId]         = useState<string | null>(null);
   const [toast, setToast]               = useState("");
   const [toastOn, setToastOn]           = useState(false);
   const [loading, setLoading]           = useState(true);
@@ -30,6 +29,8 @@ export default function MenuPage() {
   const cardRefs   = useRef<Map<string, HTMLDivElement>>(new Map());
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const observer   = useRef<IntersectionObserver | null>(null);
+
+  const getToken = () => localStorage.getItem("customerJWT");
 
   // ── scroll shadow ──
   useEffect(() => {
@@ -53,49 +54,38 @@ export default function MenuPage() {
     return () => observer.current?.disconnect();
   }, [categories, selectedCat, search]);
 
-  // ── load auth + cart from localStorage ──
+  // ── load auth ──
   useEffect(() => {
     const name  = localStorage.getItem("customerName") || "Guest";
     const table = localStorage.getItem("tableNumber")  || "";
-
     setCustomerName(name);
-    setTableNumber(table);
-
     if (!name || !table) return;
-
-    const correctKey = `currentCart_${table}_${name}`;
-
-    // ── FIX: clean up stale carts from previous users on this device/table ──
-    const toDelete: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i) || "";
-      if (k.startsWith(`currentCart_${table}_`) && k !== correctKey) {
-        toDelete.push(k);
-      }
-    }
-    toDelete.forEach(k => {
-      console.log("🧹 Removed stale cart:", k);
-      localStorage.removeItem(k);
-    });
-
-    // ── load cart for current user ──
-    const s = localStorage.getItem(correctKey);
-    if (s) {
-      try {
-        setCart(JSON.parse(s));
-        console.log("🛒 Cart loaded from:", correctKey);
-      } catch {
-        console.warn("Cart parse failed, clearing");
-        localStorage.removeItem(correctKey);
-      }
-    }
   }, []);
+
+  // ── fetch cart count ──
+  const fetchCartCount = async () => {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res  = await fetch(`${BASE_URL}/api/customer/cart`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) {
+        const items: { quantity: number }[] =
+          json.data?.items ?? json.data ?? json.items ?? [];
+        setTotalQty(items.reduce((s, i) => s + (i.quantity || 0), 0));
+      }
+    } catch (err) {
+      console.error("Cart count fetch error:", err);
+    }
+  };
 
   // ── fetch menu ──
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const token = localStorage.getItem("customerJWT");
+      const token = getToken();
       if (!token) {
         setError("Session expired. Please login again.");
         setLoading(false);
@@ -103,17 +93,12 @@ export default function MenuPage() {
       }
       try {
         const res  = await fetch(`${BASE_URL}/api/customer/menu`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         });
         const json = await res.json();
         console.log("🍽️ Menu API raw response:", JSON.stringify(json, null, 2));
 
-        if (!res.ok || !json.success) {
-          throw new Error(json?.message || `Server error: ${res.status}`);
-        }
+        if (!res.ok || !json.success) throw new Error(json?.message || `Server error: ${res.status}`);
 
         const cats: Category[] =
           json.data?.categories ??
@@ -124,10 +109,17 @@ export default function MenuPage() {
           json.menu ??
           [];
 
-        console.log(`✅ Parsed ${cats.length} categories`);
-        if (cats.length === 0) console.warn("⚠️ No categories found — check API shape above");
+        // ── Sort: "Today's Special" (or similar) always first ──
+        const specialIndex = cats.findIndex(c =>
+          /today'?s?\s*special/i.test(c.name) || /special/i.test(c.name)
+        );
+        let sorted = [...cats];
+        if (specialIndex > 0) {
+          const [special] = sorted.splice(specialIndex, 1);
+          sorted = [special, ...sorted];
+        }
 
-        setCategories(cats);
+        setCategories(sorted);
         setSelectedCat("All");
         setError("");
       } catch (err: unknown) {
@@ -138,53 +130,34 @@ export default function MenuPage() {
         setLoading(false);
       }
     })();
+    fetchCartCount();
   }, []);
 
-  // ── FIX: always read name + table fresh from localStorage, never from stale state ──
-  const saveCart = (u: CartItem[]) => {
-    setCart(u);
+  // ── Add item via API ──
+  const addItem = async (item: FoodItem) => {
+    const token = getToken();
+    if (!token) { alert("Session expired. Please login again."); return; }
+    if (addingId === item.id) return; // debounce
 
-    const name  = localStorage.getItem("customerName") || "Guest";
-    const table = localStorage.getItem("tableNumber")  || "1";
-    const key   = `currentCart_${table}_${name}`;
+    setAddingId(item.id);
+    try {
+      const res  = await fetch(`${BASE_URL}/api/customer/cart/add`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ menu_item_id: item.id, quantity: 1 }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json?.message || "Failed to add item");
 
-    console.log("💾 Saving cart →", key, u);
-    localStorage.setItem(key, JSON.stringify(u));
-  };
-
-  const addItem = (item: FoodItem) => {
-    const u = [...cart];
-    const i = u.findIndex(x => x.id === item.id);
-    if (i >= 0) {
-      u[i] = { ...u[i], qty: u[i].qty + 1 };
-    } else {
-      u.push({ ...item, image_url: item.image_url || null, qty: 1, parcel: false, notes: "" });
+      setTotalQty(prev => prev + 1);
+      showToast(`${item.name} added`);
+    } catch (err: any) {
+      console.error("Add to cart error:", err);
+      alert(err.message || "Could not add item. Try again.");
+    } finally {
+      setAddingId(null);
     }
-    saveCart(u);
-    showToast(`${item.name} added`);
   };
-
-  const removeItem = (id: string) =>
-    saveCart(
-      cart.map(i => i.id === id ? { ...i, qty: i.qty - 1 } : i).filter(i => i.qty > 0)
-    );
-
-  const getQty   = (id: string) => cart.find(i => i.id === id)?.qty || 0;
-  const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-
-  const filteredItems = useMemo(() => {
-    const base = selectedCat === "All"
-      ? categories.flatMap(c => c.items)
-      : categories.find(c => c.name === selectedCat)?.items || [];
-    return search
-      ? base.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
-      : base;
-  }, [categories, selectedCat, search]);
-
-  const allItems = useMemo(
-    () => categories.flatMap(c => c.items).filter(i => i.image_url),
-    [categories]
-  );
 
   const showToast = (msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -193,13 +166,27 @@ export default function MenuPage() {
   };
 
   const regCard = (id: string, el: HTMLDivElement | null) => {
-    if (el) {
-      cardRefs.current.set(id, el);
-      observer.current?.observe(el);
-    } else {
-      cardRefs.current.delete(id);
-    }
+    if (el) { cardRefs.current.set(id, el); observer.current?.observe(el); }
+    else { cardRefs.current.delete(id); }
   };
+
+  const filteredItems = useMemo(() => {
+    const base = selectedCat === "All"
+      ? categories.flatMap(c => c.items)
+      : categories.find(c => c.name === selectedCat)?.items || [];
+    return search ? base.filter(i => i.name.toLowerCase().includes(search.toLowerCase())) : base;
+  }, [categories, selectedCat, search]);
+
+  // ── Featured strip: items with images from all categories ──
+  const allItemsWithImages = useMemo(
+    () => categories.flatMap(c => c.items).filter(i => i.image_url),
+    [categories]
+  );
+
+  // ── Today's Special items (first matching category) ──
+  const specialCategory = categories.find(c =>
+    /today'?s?\s*special/i.test(c.name) || /special/i.test(c.name)
+  );
 
   return (
     <>
@@ -286,6 +273,41 @@ export default function MenuPage() {
         @media(min-width:768px) { .s-title { font-size:28px; } }
         .s-rule  { height:1px; margin:8px 0 16px; background:linear-gradient(90deg,transparent,rgba(200,169,81,.4),transparent); }
 
+        /* ── Today's Special horizontal scroll ── */
+        .special-scroll {
+          display:flex; gap:14px; overflow-x:auto; padding:2px 1px 14px; scrollbar-width:none;
+        }
+        .special-scroll::-webkit-scrollbar { display:none; }
+        .special-card {
+          flex-shrink:0; position:relative; overflow:hidden; cursor:pointer;
+          border-radius:16px; border:1.5px solid rgba(200,169,81,.28);
+          box-shadow:0 4px 16px rgba(45,10,15,.14);
+          width:140px; height:160px;
+          -webkit-tap-highlight-color:transparent;
+          transition:transform .35s cubic-bezier(.23,1,.32,1), box-shadow .35s, border-color .3s;
+        }
+        @media(min-width:640px)  { .special-card { width:160px; height:180px; } }
+        @media(min-width:1024px) { .special-card { width:180px; height:200px; border-radius:18px; } }
+        .special-card:hover  { transform:scale(1.06) translateY(-4px); box-shadow:0 14px 32px rgba(45,10,15,.22); border-color:rgba(200,169,81,.6); }
+        .special-card:active { transform:scale(.96); }
+        .special-card-ov     { position:absolute; inset:0; background:linear-gradient(to top, rgba(40,8,10,.78) 0%, transparent 52%); }
+        .special-card-body   { position:absolute; bottom:0; left:0; right:0; padding:10px; }
+        .special-card-name   { font-family:var(--sans); font-size:11px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+        .special-card-price  { font-family:var(--serif); font-size:14px; color:var(--g); }
+        .special-add-btn {
+          position:absolute; top:8px; right:8px;
+          width:28px; height:28px; border-radius:8px; border:none; cursor:pointer;
+          background:rgba(200,169,81,.9); color:var(--ink);
+          display:flex; align-items:center; justify-content:center;
+          font-size:18px; font-weight:700; line-height:1;
+          -webkit-tap-highlight-color:transparent;
+          transition:transform .25s cubic-bezier(.34,1.56,.64,1), background .2s;
+        }
+        .special-add-btn:hover  { background:var(--g); transform:scale(1.14); }
+        .special-add-btn:active { transform:scale(.9); }
+        .special-add-btn:disabled { opacity:.6; cursor:not-allowed; }
+
+        /* ── Featured strip ── */
         .strip-box { overflow:hidden; position:relative; }
         .strip-box::before, .strip-box::after {
           content:''; position:absolute; top:0; bottom:0; width:60px; z-index:2; pointer-events:none;
@@ -404,26 +426,11 @@ export default function MenuPage() {
           background:linear-gradient(135deg,var(--g) 0%,#D4B76E 100%);
           color:var(--ink); font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.07em;
           flex-shrink:0; -webkit-tap-highlight-color:transparent;
-          transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s;
+          transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s, opacity .2s;
         }
-        .abtn:hover  { box-shadow:0 5px 16px rgba(200,169,81,.4); transform:scale(1.08); }
-        .abtn:active { transform:scale(.94); }
-
-        .qw {
-          display:flex; align-items:center;
-          height:32px; border-radius:9px; overflow:hidden;
-          background:rgba(200,169,81,.1); border:1.5px solid rgba(200,169,81,.35); flex-shrink:0;
-        }
-        .qb {
-          width:30px; height:100%; display:flex; align-items:center; justify-content:center;
-          background:linear-gradient(135deg,var(--cm),var(--c));
-          color:var(--g); font-size:16px; font-weight:700; border:none; cursor:pointer;
-          -webkit-tap-highlight-color:transparent;
-          transition:transform .25s cubic-bezier(.34,1.56,.64,1); flex-shrink:0;
-        }
-        .qb:hover  { transform:scale(1.12); }
-        .qb:active { transform:scale(.9); }
-        .qn { padding:0 8px; min-width:24px; text-align:center; font-family:var(--sans); font-size:13px; font-weight:700; color:var(--c); }
+        .abtn:hover:not(:disabled)  { box-shadow:0 5px 16px rgba(200,169,81,.4); transform:scale(1.08); }
+        .abtn:active:not(:disabled) { transform:scale(.94); }
+        .abtn:disabled { opacity:.6; cursor:not-allowed; }
 
         .fc-bot { height:2px; transition:background .5s; }
 
@@ -471,13 +478,6 @@ export default function MenuPage() {
           transition:opacity .3s cubic-bezier(.23,1,.32,1), transform .3s cubic-bezier(.34,1.56,.64,1);
         }
         .toast.on { opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
-
-        .debug-banner {
-          background:rgba(200,169,81,.12); border:1px solid rgba(200,169,81,.3);
-          border-radius:10px; padding:12px 16px; margin:16px 0;
-          font-family:var(--sans); font-size:12px; color:var(--c);
-        }
-        .debug-banner strong { display:block; margin-bottom:4px; font-size:13px; }
 
         @keyframes spin { to{transform:rotate(360deg);} }
         .spin {
@@ -551,11 +551,7 @@ export default function MenuPage() {
               <p style={{ fontFamily:"var(--sans)", fontSize:14, color:"#b91c1c", marginBottom:12 }}>{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                style={{
-                  padding:"8px 20px", borderRadius:8, border:"1.5px solid var(--c)",
-                  background:"transparent", color:"var(--c)",
-                  fontFamily:"var(--sans)", fontSize:13, cursor:"pointer",
-                }}
+                style={{ padding:"8px 20px", borderRadius:8, border:"1.5px solid var(--c)", background:"transparent", color:"var(--c)", fontFamily:"var(--sans)", fontSize:13, cursor:"pointer" }}
               >
                 Try Again
               </button>
@@ -564,23 +560,47 @@ export default function MenuPage() {
 
           {!loading && !error && (<>
 
-            {categories.length === 0 && (
-              <div className="debug-banner">
-                <strong>⚠️ Menu loaded but 0 categories found</strong>
-                Open DevTools → Console and look for{" "}
-                <code>🍽️ Menu API raw response</code> to see the exact shape.
+            {/* ── Today's Special (from backend category) ── */}
+            {specialCategory && specialCategory.items.length > 0 && (
+              <div style={{ marginTop:22, marginBottom:26 }}>
+                <p className="s-eye">Featured</p>
+                <p className="s-title">Today&apos;s Special</p>
+                <div className="s-rule" />
+                <div className="special-scroll">
+                  {specialCategory.items.map(item => (
+                    <div key={item.id} className="special-card">
+                      <Image
+                        src={item.image_url && item.image_url.trim() !== "" ? item.image_url : "/images/paneer.jpg"}
+                        alt={item.name} fill sizes="180px" className="object-cover"
+                      />
+                      <div className="special-card-ov" />
+                      <button
+                        className="special-add-btn"
+                        disabled={addingId === item.id}
+                        onClick={() => addItem(item)}
+                        aria-label={`Add ${item.name}`}
+                      >
+                        {addingId === item.id ? "…" : "+"}
+                      </button>
+                      <div className="special-card-body">
+                        <p className="special-card-name">{item.name}</p>
+                        <p className="special-card-price">₹{parseFloat(item.price).toFixed(0)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* ── Featured strip ── */}
-            {allItems.length > 0 && (
+            {/* ── Featured strip (items with images, auto-scroll) — shown if no special category ── */}
+            {!specialCategory && allItemsWithImages.length > 0 && (
               <div style={{ marginTop:22, marginBottom:26 }}>
                 <p className="s-eye">Featured Dishes</p>
                 <p className="s-title">Today&apos;s Highlights</p>
                 <div className="s-rule" />
                 <div className="strip-box" style={{ paddingBottom:6 }}>
                   <div className="strip-track">
-                    {[...allItems, ...allItems].map((item, i) => (
+                    {[...allItemsWithImages, ...allItemsWithImages].map((item, i) => (
                       <div key={`${item.id}-${i}`} className="sc" onClick={() => addItem(item)}>
                         <Image src={item.image_url!} alt={item.name} fill sizes="148px" className="object-cover" />
                         <div className="sc-ov" />
@@ -598,10 +618,7 @@ export default function MenuPage() {
             <div className="s-rule" />
 
             <div className="pills">
-              <button
-                className={`pill${selectedCat === "All" ? " on" : ""}`}
-                onClick={() => setSelectedCat("All")}
-              >
+              <button className={`pill${selectedCat === "All" ? " on" : ""}`} onClick={() => setSelectedCat("All")}>
                 All
               </button>
               {categories.map(cat => (
@@ -619,11 +636,11 @@ export default function MenuPage() {
               {filteredItems.length} {filteredItems.length === 1 ? "dish" : "dishes"}
             </p>
 
-            {/* ── Item grid ── */}
+            {/* ── Item grid (ADD only, no stepper) ── */}
             <div className="grid">
               {filteredItems.map((item, idx) => {
-                const qty   = getQty(item.id);
                 const isVis = visible.has(item.id);
+                const isAdding = addingId === item.id;
                 return (
                   <div
                     key={item.id}
@@ -633,54 +650,34 @@ export default function MenuPage() {
                     style={{ transitionDelay:`${Math.min(idx % 8, 7) * 55}ms` }}
                   >
                     <div className="fc-gline" />
-
                     <div className="fc-img">
                       <Image
-                        src={
-                          item.image_url && item.image_url.trim() !== ""
-                            ? item.image_url
-                            : "/images/paneer.jpg"
-                        }
-                        alt={item.name}
-                        fill
+                        src={item.image_url && item.image_url.trim() !== "" ? item.image_url : "/images/paneer.jpg"}
+                        alt={item.name} fill
                         sizes="(max-width:580px) 50vw,(max-width:900px) 33vw,25vw"
                         className="object-cover"
                       />
                       {item.type && (
                         <div className="vb">
-                          <div
-                            className="vdot"
-                            style={{ background: item.type === "veg" ? "#1a7a1a" : "#b91c1c" }}
-                          />
+                          <div className="vdot" style={{ background: item.type === "veg" ? "#1a7a1a" : "#b91c1c" }} />
                         </div>
                       )}
                     </div>
-
                     <div className="fc-body">
                       <p className="fc-name">{item.name}</p>
                       <p className="fc-desc">{item.description}</p>
                       <div className="fc-foot">
                         <span className="fc-price">₹{parseFloat(item.price).toFixed(0)}</span>
-                        {qty === 0 ? (
-                          <button className="abtn" onClick={() => addItem(item)}>ADD</button>
-                        ) : (
-                          <div className="qw">
-                            <button className="qb" onClick={() => removeItem(item.id)}>−</button>
-                            <span className="qn">{qty}</span>
-                            <button className="qb" onClick={() => addItem(item)}>+</button>
-                          </div>
-                        )}
+                        <button
+                          className="abtn"
+                          disabled={isAdding}
+                          onClick={() => addItem(item)}
+                        >
+                          {isAdding ? "Adding…" : "ADD"}
+                        </button>
                       </div>
                     </div>
-
-                    <div
-                      className="fc-bot"
-                      style={{
-                        background: qty > 0
-                          ? "linear-gradient(90deg,transparent,var(--g),transparent)"
-                          : "transparent",
-                      }}
-                    />
+                    <div className="fc-bot" />
                   </div>
                 );
               })}
