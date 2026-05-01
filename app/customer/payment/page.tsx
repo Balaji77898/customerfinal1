@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
-const PARCEL_CHARGE = 20;
 
 const getToken = () =>
   typeof window !== "undefined" ? localStorage.getItem("customerJWT") : null;
@@ -12,17 +11,27 @@ const getToken = () =>
 export default function PaymentPage() {
   const router = useRouter();
   const [cart, setCart]         = useState<any[]>([]);
-  const [customer, setCustomer] = useState({ name: "", mobile: "", table: "" });
+  const [customer, setCustomer] = useState({ name: "", mobile: ""});
   const [loading, setLoading]   = useState(false);
   const [cartLoading, setCartLoading] = useState(true);
   const [showConfirm, setShowConfirm] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
 
-  // ── fetch cart from API (same as CartPage) ──
+  const isTokenValid = (token: string) => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+};
+  // ── fetch cart from API ──
   const fetchCart = async () => {
     const token = getToken();
-    if (!token) { router.push("/customer/scan-qr"); return; }
-
+if (!token || !isTokenValid(token)) {
+  console.warn("Waiting for valid token...");
+  return; // no redirect
+}
     try {
       const res  = await fetch(`${BASE_URL}/api/customer/cart`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -41,7 +50,6 @@ export default function PaymentPage() {
         image_url:   i.image_url    ?? i.menu_item?.image_url ?? null,
         qty:         i.quantity     ?? i.qty ?? 1,
         notes:       i.notes        ?? i.note ?? "",
-        parcel:      i.parcel       ?? false,
       }));
 
       setCart(items);
@@ -53,19 +61,37 @@ export default function PaymentPage() {
   };
 
   useEffect(() => {
-    const token  = localStorage.getItem("customerJWT");
-    const name   = localStorage.getItem("customerName")  || "Guest";
-    const mobile = localStorage.getItem("customerMobile") || "";
-    const table  = localStorage.getItem("tableNumber")    || "";
+  let interval: any;
 
-    if (!token || !table) {
-      router.push("/customer/scan-qr");
+  const load = async () => {
+    const token = getToken();
+
+    if (!token || !isTokenValid(token)) {
+      console.warn("Waiting for valid token...");
+      setCartLoading(false);
       return;
     }
 
-    setCustomer({ name, mobile, table });
-    fetchCart();
-  }, []);
+    try {
+      const name = localStorage.getItem("customerName") || "Guest";
+      const mobile = localStorage.getItem("customerMobile") || "";
+
+      setCustomer({ name, mobile });
+
+      await fetchCart();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // initial load
+  load();
+
+  // repeat polling
+  interval = setInterval(load, 5000);
+
+  return () => clearInterval(interval);
+}, []);
 
   const placeOrder = async () => {
     if (!cart.length) return alert("Cart is empty");
@@ -74,6 +100,7 @@ export default function PaymentPage() {
       const token = getToken();
       if (!token) {
         alert("Session expired. Please login again.");
+        router.push("/customer/scan-qr");
         return;
       }
 
@@ -106,7 +133,7 @@ export default function PaymentPage() {
       console.log("✅ Placed order ID:", orderId);
 
       if (orderId) {
-        localStorage.setItem("lastOrderId", String(orderId));
+        try { localStorage.setItem("lastOrderId", String(orderId)); } catch (_) {}
         setPlacedOrderId(String(orderId));
       }
 
@@ -122,13 +149,13 @@ export default function PaymentPage() {
 
   const goToTracking = () => {
     if (placedOrderId) {
-      localStorage.setItem("lastOrderId", placedOrderId);
+      try { localStorage.setItem("lastOrderId", placedOrderId); } catch (_) {}
     }
     router.push("/customer/order-status");
   };
 
   const subtotal = cart.reduce(
-    (s, i) => s + parseFloat(i.price) * i.qty + (i.parcel ? PARCEL_CHARGE * i.qty : 0),
+    (s, i) => s + parseFloat(i.price) * i.qty,
     0
   );
 
@@ -327,8 +354,6 @@ export default function PaymentPage() {
 
         @keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
 
-        /* cart loading spinner */
-        @keyframes spin{to{transform:rotate(360deg);}}
         .spin{width:40px;height:40px;border-radius:50%;border:2px solid rgba(200,169,81,.18);border-top-color:var(--g);animation:spin .75s linear infinite;}
       `}</style>
 
@@ -403,9 +428,7 @@ export default function PaymentPage() {
                           </span>
                         )}
                       </div>
-                      <p className="order-item-price">
-                        ₹{(parseFloat(item.price) * item.qty + (item.parcel ? PARCEL_CHARGE * item.qty : 0)).toFixed(0)}
-                      </p>
+                      <p className="order-item-price">₹{(parseFloat(item.price) * item.qty).toFixed(0)}</p>
                     </div>
                   ))}
                 </div>

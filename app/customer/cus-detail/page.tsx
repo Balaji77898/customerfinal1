@@ -139,6 +139,7 @@ export default function CustomerDetails() {
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [qrToken, setQrToken] = useState<string | null>(null);
+  const [tableNumber, setTableNumber] = useState<string | null>(null); // ← track table
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
@@ -148,12 +149,36 @@ export default function CustomerDetails() {
   const [cursorBig, setCursorBig] = useState(false);
 
   useEffect(() => {
-    // Safe: only runs client-side inside useEffect
-    const token = new URLSearchParams(window.location.search).get("token");
+    const params = new URLSearchParams(window.location.search);
+
+    const token = params.get("token");
+
+    // ── Read tableNumber from ALL possible URL param names ──
+    const table =
+      params.get("tableNumber") ||
+      params.get("tableNo") ||
+      params.get("table") ||
+      params.get("table_number") ||
+      null;
+
+    console.log("🔍 cus-detail params — token:", !!token, "| table:", table);
+
     if (token) {
       setQrToken(token);
     } else {
       showToast("QR token required. Please scan again.");
+    }
+
+    if (table) {
+      setTableNumber(table);
+      // ── Save table number to localStorage immediately from URL ──
+      // This ensures it's available even if the API doesn't return it
+      try {
+        localStorage.setItem("tableNumber", table);
+        console.log("✅ tableNumber saved from URL:", table);
+      } catch (e) {
+        console.error("localStorage write error:", e);
+      }
     }
 
     setTimeout(() => setEntered(true), 80);
@@ -194,29 +219,37 @@ export default function CustomerDetails() {
       if (!response.ok) throw new Error(res?.message || "Login failed");
       if (!res.success) throw new Error(res?.message || "Login failed");
 
-      // Handle both new {success, data} and legacy flat structures
       const data = res.data ?? res;
 
-      // Guard localStorage with typeof check for safety
-      if (typeof window !== "undefined") {
-  if (data?.token) {
-    localStorage.setItem("customerJWT", data.token);
+      console.log("🔐 Login response data:", JSON.stringify(data, null, 2));
 
-    // IMPORTANT: this is what middleware reads
-    document.cookie = `customerJWT=${data.token}; path=/; max-age=86400; samesite=lax`;
-  }
+      try {
+        // ── JWT token ──
+        if (data?.token) {
+          localStorage.setItem("customerJWT", data.token);
+          document.cookie = `customerJWT=${data.token}; path=/; max-age=86400; samesite=lax`;
+        }
 
-  if (data?.customerId) {
-    localStorage.setItem("customerId", data.customerId.toString());
-  }
+        // ── Customer info ──
+        if (data?.customerId) {
+          localStorage.setItem("customerId", data.customerId.toString());
+        }
 
-  if (data?.tableNumber) {
-    localStorage.setItem("tableNumber", data.tableNumber.toString());
-  }
+        // ── tableNumber: prefer API response, fallback to URL param ──
+        // This is the KEY fix: always ensure tableNumber is saved
+        const apiTable = data?.tableNumber?.toString() || data?.table?.toString() || null;
+        const finalTable = apiTable || tableNumber; // fallback to URL-parsed value
+        if (finalTable) {
+          localStorage.setItem("tableNumber", finalTable);
+          console.log("✅ tableNumber saved from API/URL:", finalTable);
+        }
 
-  localStorage.setItem("customerName", trimName);
-  localStorage.setItem("customerMobile", trimMobile);
-}
+        // ── Basic info ──
+        localStorage.setItem("customerName", trimName);
+        localStorage.setItem("customerMobile", trimMobile);
+      } catch (e) {
+        console.error("localStorage write error:", e);
+      }
 
       showToast("Welcome! Entering your royal experience…", "success");
       setTimeout(() => router.push("/customer/menu"), 1500);
@@ -512,7 +545,7 @@ export default function CustomerDetails() {
           {qrToken && (
             <div className="od-token-badge">
               <IconCheck size={12} />
-              Table Verified
+              {tableNumber ? `Table ${tableNumber} Verified` : "Table Verified"}
             </div>
           )}
 
