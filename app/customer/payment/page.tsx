@@ -59,7 +59,7 @@ export default function PaymentPage() {
     const table  = localStorage.getItem("tableNumber")    || "";
 
     if (!token || !table) {
-      router.push("/customer/login");
+      router.push("/customer/scan-qr");
       return;
     }
 
