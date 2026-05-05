@@ -1,4 +1,5 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 
@@ -131,6 +132,40 @@ interface Toast {
   type: "error" | "success";
 }
 
+/* ── Helper: clear all customer-session keys from localStorage ── */
+function clearCustomerSession() {
+  const keys = [
+    "customerJWT",
+    "customerId",
+    "customerName",
+    "customerMobile",
+    "tableNumber",
+    "lastOrderId",
+    // add any other session keys your app uses
+  ];
+  keys.forEach(k => {
+    try { localStorage.removeItem(k); } catch (_) {}
+  });
+  // Also clear the JWT cookie
+  document.cookie = "customerJWT=; path=/; max-age=0; samesite=lax";
+}
+
+/* ── Helper: clear cart via API (best-effort, non-blocking) ── */
+async function clearCartOnServer(token: string) {
+  try {
+    // Try a dedicated clear-cart endpoint if your backend has one
+    const res = await fetch(`${API_URL}/api/customer/cart/clear`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    });
+    const json = await res.json().catch(() => ({}));
+    console.log("🗑️ Cart clear response:", json);
+  } catch (err) {
+    // Non-fatal — cart will be empty server-side after a new login anyway
+    console.warn("Cart clear failed (non-fatal):", err);
+  }
+}
+
 export default function CustomerDetails() {
   const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -139,7 +174,7 @@ export default function CustomerDetails() {
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [qrToken, setQrToken] = useState<string | null>(null);
-  const [tableNumber, setTableNumber] = useState<string | null>(null); // ← track table
+  const [tableNumber, setTableNumber] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
@@ -150,10 +185,7 @@ export default function CustomerDetails() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-
     const token = params.get("token");
-
-    // ── Read tableNumber from ALL possible URL param names ──
     const table =
       params.get("tableNumber") ||
       params.get("tableNo") ||
@@ -171,8 +203,6 @@ export default function CustomerDetails() {
 
     if (table) {
       setTableNumber(table);
-      // ── Save table number to localStorage immediately from URL ──
-      // This ensures it's available even if the API doesn't return it
       try {
         localStorage.setItem("tableNumber", table);
         console.log("✅ tableNumber saved from URL:", table);
@@ -181,10 +211,16 @@ export default function CustomerDetails() {
       }
     }
 
+    // ── KEY FIX: Clear all previous session data so no stale cart/order ──
+    clearCustomerSession();
+    // Re-save table after clearing (clearCustomerSession wiped it)
+    if (table) {
+      try { localStorage.setItem("tableNumber", table); } catch (_) {}
+    }
+
     setTimeout(() => setEntered(true), 80);
 
     const iv = setInterval(() => setSlideIdx(p => (p + 1) % SLIDES.length), 5000);
-
     const onMove = (e: MouseEvent) => setCursorPos({ x: e.clientX, y: e.clientY });
     window.addEventListener("mousemove", onMove);
 
@@ -220,31 +256,31 @@ export default function CustomerDetails() {
       if (!res.success) throw new Error(res?.message || "Login failed");
 
       const data = res.data ?? res;
-
       console.log("🔐 Login response data:", JSON.stringify(data, null, 2));
 
+      // ── Clear any old session before saving new one ──
+      clearCustomerSession();
+
       try {
-        // ── JWT token ──
         if (data?.token) {
           localStorage.setItem("customerJWT", data.token);
           document.cookie = `customerJWT=${data.token}; path=/; max-age=86400; samesite=lax`;
+
+          // Best-effort server-side cart clear with the NEW token
+          clearCartOnServer(data.token);
         }
 
-        // ── Customer info ──
         if (data?.customerId) {
           localStorage.setItem("customerId", data.customerId.toString());
         }
 
-        // ── tableNumber: prefer API response, fallback to URL param ──
-        // This is the KEY fix: always ensure tableNumber is saved
         const apiTable = data?.tableNumber?.toString() || data?.table?.toString() || null;
-        const finalTable = apiTable || tableNumber; // fallback to URL-parsed value
+        const finalTable = apiTable || tableNumber;
         if (finalTable) {
           localStorage.setItem("tableNumber", finalTable);
           console.log("✅ tableNumber saved from API/URL:", finalTable);
         }
 
-        // ── Basic info ──
         localStorage.setItem("customerName", trimName);
         localStorage.setItem("customerMobile", trimMobile);
       } catch (e) {
@@ -418,7 +454,7 @@ export default function CustomerDetails() {
           <div className="od-mob-brand">
             <div className="od-mob-icon"><IconFlame size={18} /></div>
             <div>
-              <strong>Royal Feast</strong>
+              <strong>Spice Delight</strong>
               <span>Premium Dining Experience</span>
             </div>
           </div>
@@ -428,7 +464,7 @@ export default function CustomerDetails() {
             <div />
             <div>
               <div className="od-brand-icon-lg"><IconFlame size={22} /></div>
-              <div className="od-brand-name">Royal<br /><em>Feast</em></div>
+              <div className="od-brand-name">Spice<br /><em>Delight</em></div>
               <div className="od-brand-sub">Premium Dining · Step 1 of 2</div>
               <div className="od-slide-lbl-d">{SLIDE_LABELS[slideIdx]}</div>
               <div className="od-step-label">Step 1 of 2 — Guest Details</div>
@@ -520,7 +556,7 @@ export default function CustomerDetails() {
               >
                 <div className="od-submit-shine" />
                 <IconArrowRight size={16} />
-                Enter the Royal Feast
+                Enter Spice Delight
               </button>
             ) : (
               <div className="od-loading-row">
@@ -549,7 +585,7 @@ export default function CustomerDetails() {
             </div>
           )}
 
-          <div className="od-watermark">Royal Feast · Est. 2009</div>
+          <div className="od-watermark">Spice Delight · Est. 2009</div>
         </div>
       </div>
 

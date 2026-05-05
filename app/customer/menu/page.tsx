@@ -12,6 +12,12 @@ interface Category { id: string; name: string; description: string; items: FoodI
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 
+// ── Inline SVG data-URL for "no image" placeholder ──
+const NO_IMAGE_SVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect width='400' height='300' fill='%23f5ede0'/%3E%3Crect x='140' y='90' width='120' height='90' rx='10' fill='none' stroke='%23c8a951' stroke-width='2.5' opacity='0.45'/%3E%3Ccircle cx='168' cy='118' r='10' fill='none' stroke='%23c8a951' stroke-width='2.5' opacity='0.45'/%3E%3Cpolyline points='140,180 175,145 200,165 225,138 260,180' fill='none' stroke='%23c8a951' stroke-width='2.5' stroke-linejoin='round' opacity='0.45'/%3E%3Cline x1='155' y1='220' x2='245' y2='220' stroke='%23c8a951' stroke-width='2' opacity='0.3' stroke-linecap='round'/%3E%3Ctext x='200' y='242' text-anchor='middle' font-family='sans-serif' font-size='11' fill='%235d1616' opacity='0.35' letter-spacing='2'%3ENo Image%3C/text%3E%3C/svg%3E`;
+
+const getImgSrc = (url: string | null | undefined) =>
+  url && url.trim() !== "" ? url : NO_IMAGE_SVG;
+
 export default function MenuPage() {
   const router = useRouter();
   const [customerName, setCustomerName] = useState("Guest");
@@ -159,10 +165,11 @@ export default function MenuPage() {
     }
   };
 
+  // ── Toast: reduced to 1200ms ──
   const showToast = (msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(msg); setToastOn(true);
-    toastTimer.current = setTimeout(() => setToastOn(false), 2200);
+    toastTimer.current = setTimeout(() => setToastOn(false), 1200);
   };
 
   const regCard = (id: string, el: HTMLDivElement | null) => {
@@ -570,8 +577,9 @@ export default function MenuPage() {
                   {specialCategory.items.map(item => (
                     <div key={item.id} className="special-card">
                       <Image
-                        src={item.image_url && item.image_url.trim() !== "" ? item.image_url : "/images/paneer.jpg"}
+                        src={getImgSrc(item.image_url)}
                         alt={item.name} fill sizes="180px" className="object-cover"
+                        unoptimized={!item.image_url}
                       />
                       <div className="special-card-ov" />
                       <button
@@ -652,10 +660,11 @@ export default function MenuPage() {
                     <div className="fc-gline" />
                     <div className="fc-img">
                       <Image
-                        src={item.image_url && item.image_url.trim() !== "" ? item.image_url : "/images/paneer.jpg"}
+                        src={getImgSrc(item.image_url)}
                         alt={item.name} fill
                         sizes="(max-width:580px) 50vw,(max-width:900px) 33vw,25vw"
                         className="object-cover"
+                        unoptimized={!item.image_url}
                       />
                       {item.type && (
                         <div className="vb">
