@@ -213,12 +213,13 @@ export default function RestaurantLandingPage() {
 
   // ── Fetch restaurant details once we have a token ──
   useEffect(() => {
-    if (!tableInfo?.token) return;
+    const token = tableInfo?.token;
+    if (!token) return;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/customer/restaurant`, {
-          headers: { Authorization: `Bearer ${tableInfo.token}` },
-        });
+        const res = await fetch(
+          `${API_URL}/api/customer/restaurant?qrToken=${encodeURIComponent(token)}`
+        );
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json?.message || "Failed to load restaurant details");
         setRestaurantData(json.data as RestaurantApiData);

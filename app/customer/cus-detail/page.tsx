@@ -259,9 +259,9 @@ export default function CustomerDetails() {
     if (!qrToken) return;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/api/customer/restaurant`, {
-          headers: { Authorization: `Bearer ${qrToken}` },
-        });
+        const res = await fetch(
+          `${API_URL}/api/customer/restaurant?qrToken=${encodeURIComponent(qrToken)}`
+        );
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json?.message || "Failed to load restaurant details");
         setRestaurantData(json.data as RestaurantApiData);
