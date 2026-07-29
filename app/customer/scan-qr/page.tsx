@@ -9,19 +9,20 @@ import {
   RefObject
 } from "react";
 import { getSession, saveSession } from "@/app/utils/session";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
+
 /* ─── SVG Icon System ─── */
 type IconProps = React.SVGProps<SVGSVGElement>;
 
 const Icon: Record<string, (p: IconProps) => JSX.Element> = {
   Flame:   (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M17.66 11.2c-.23-.3-.51-.56-.77-.82-.67-.6-1.43-1.03-2.07-1.66C13.33 7.26 13 4.85 13.95 3c-.95.23-1.78.75-2.49 1.32-2.59 2.11-3.66 5.65-2.7 8.87.06.22.12.44.12.67 0 .44-.36.82-.8.82-.42 0-.72-.27-.83-.65-.03-.1-.06-.2-.08-.31-1.14 1.6-1.33 3.75-.55 5.56.53 1.22 1.39 2.28 2.45 3.04.98.71 2.09 1.21 3.26 1.41.33.06.66.1.99.1 1.23.04 2.44-.26 3.47-.86 2.01-1.14 3.36-3.28 3.36-5.68 0-1.32-.43-2.57-1.14-3.6z"/></svg>,
-  Leaf:    (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 008 20c7 0 13-5 13-12-3 0-7 1-11 4l3.17 3.17A4.98 4.98 0 0119 16c0 3.31-1.58 6.25-4 8.1A11.97 11.97 0 0017 8z"/></svg>,
   Star:    (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>,
   Pin:     (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>,
   Phone:   (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>,
   Mail:    (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>,
   Bag:     (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2h-4c0-1.1.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/></svg>,
   Arrow:   (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
-  Plus:    (p) => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   Clock:   (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>,
   Chef:    (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-8-15.03-8-15.03 0h15.03zM1.02 17h15v2h-15z"/></svg>,
   Check:   (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>,
@@ -32,37 +33,56 @@ const Icon: Record<string, (p: IconProps) => JSX.Element> = {
   Award:   (p) => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>,
 };
 
-/* ─── Data ─── */
+/* ─── Generic imagery (no cuisine / diet signalling) ─── */
 const BG_SLIDES = [
-  "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=1600&q=90&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=1600&q=90&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=1600&q=90&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1600&q=90&auto=format&fit=crop",
 ];
 
-const MENU_ITEMS = [
-  { id:1, name:"Butter Chicken",     desc:"72-hr slow-cooked tomato-cream gravy",          price:320, badge:"Bestseller",  veg:false, img:"https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=600&q=85&auto=format&fit=crop", rating:"4.9" },
-  { id:2, name:"Paneer Tikka",       desc:"Tandoor-charred cottage cheese, mint chutney",  price:280, badge:"Chef's Pick", veg:true,  img:"https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&q=85&auto=format&fit=crop", rating:"4.8" },
-  { id:3, name:"Dal Makhani",        desc:"Black lentils simmered 12 hrs, butter & cream", price:220, badge:"Slow Cooked", veg:true,  img:"https://images.unsplash.com/photo-1630383249896-424e482df921?w=600&q=85&auto=format&fit=crop", rating:"4.9" },
-  { id:4, name:"Hyderabadi Biryani", desc:"Aged basmati dum-cooked, saffron & fried onion",price:380, badge:"Dum Cooked",  veg:false, img:"https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&q=85&auto=format&fit=crop", rating:"4.7" },
-  { id:5, name:"Seekh Kebab",        desc:"Minced lamb skewers with ginger & coriander",   price:340, badge:"Tandoor",     veg:false, img:"https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&q=85&auto=format&fit=crop", rating:"4.8" },
-  { id:6, name:"Gulab Jamun",        desc:"Rose-cardamom syrup dumplings, served warm",    price:160, badge:"Sweet",       veg:true,  img:"https://images.unsplash.com/photo-1516714435131-44d6b64dc6a2?w=600&q=85&auto=format&fit=crop", rating:"4.9" },
-];
-
-const REVIEWS = [
-  { name:"Priya Venkat",  loc:"Koramangala · Google", stars:5, q:"The butter chicken here is unlike anything in Bangalore. Rich, smoky, deeply flavourful. We come every weekend." },
-  { name:"Rohan Shetty",  loc:"Indiranagar · Zomato",  stars:5, q:"Dal Makhani that tastes like grandmother's. The garlic naan is dangerously addictive. Absolute must visit!" },
-  { name:"Aarti Joshi",   loc:"Whitefield · Swiggy",   stars:4, q:"Brought 12 family members for dad's birthday — every dish was outstanding. A complete experience." },
-];
+/* Generic value props — same for every restaurant, no menu/diet content */
+const WHY_US = [
+  { icon: "Flame",  title: "Fresh Ingredients", desc: "Sourced and prepared with care, every single day." },
+  { icon: "Chef",   title: "Skilled Kitchen",   desc: "Dishes made by an experienced culinary team." },
+  { icon: "Award",  title: "Trusted Quality",   desc: "Consistent standards guests can rely on." },
+  { icon: "Clock",  title: "Quick Service",     desc: "Your order handled promptly, from kitchen to table." },
+  { icon: "Sparkle",title: "Hygienic Kitchen",  desc: "Cleanliness and food safety always come first." },
+  { icon: "Globe",  title: "Dine-In & Takeaway",desc: "Enjoy here or take your order on the go." },
+] as const;
 
 const STRIP_IMGS = [
-  { src:"https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=500&q=80&auto=format&fit=crop", label:"Butter Chicken" },
-  { src:"https://images.unsplash.com/photo-1601050690597-df0568f70950?w=500&q=80&auto=format&fit=crop", label:"Seekh Kebab" },
-  { src:"https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=500&q=80&auto=format&fit=crop", label:"Dum Biryani" },
-  { src:"https://images.unsplash.com/photo-1630383249896-424e482df921?w=500&q=80&auto=format&fit=crop", label:"Dal Makhani" },
-  { src:"https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=500&q=80&auto=format&fit=crop", label:"Paneer Tikka" },
-  { src:"https://images.unsplash.com/photo-1516714435131-44d6b64dc6a2?w=500&q=80&auto=format&fit=crop", label:"Gulab Jamun" },
+  { src:"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=500&q=80&auto=format&fit=crop", label:"Warm Ambience" },
+  { src:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&q=80&auto=format&fit=crop", label:"Fresh Ingredients" },
+  { src:"https://images.unsplash.com/photo-1552566626-52f8b828add9?w=500&q=80&auto=format&fit=crop", label:"Attentive Service" },
+  { src:"https://images.unsplash.com/photo-1559339352-11d035aa65de?w=500&q=80&auto=format&fit=crop", label:"Great Hospitality" },
+  { src:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=500&q=80&auto=format&fit=crop", label:"Quick Service" },
+  { src:"https://images.unsplash.com/photo-1552566626-52f8b828add9?w=500&q=80&auto=format&fit=crop", label:"Cozy Setting" },
 ];
+
+/* ─── API types (matches GET /api/customer/restaurant) ─── */
+interface RestaurantInfo {
+  id: string;
+  name: string;
+  description: string | null;
+  restaurant_type: string;
+  address: string;
+  city: string;
+  state: string | null;
+}
+interface TableApiInfo {
+  id: string;
+  table_number: string;
+}
+interface ContactsInfo {
+  phone: string | null;
+  email: string | null;
+}
+interface RestaurantApiData {
+  restaurant: RestaurantInfo;
+  table: TableApiInfo;
+  contacts: ContactsInfo;
+}
 
 /* ─── Scroll reveal hook ─── */
 function useReveal(threshold = 0.08): [RefObject<HTMLElement | null>, boolean]{
@@ -100,7 +120,7 @@ function Reveal({ children, vis, delay = 0, style = {} }: RevealProps) {
   );
 }
 
-/* ─── Loader ─── */
+/* ─── Loader (generic — no restaurant name yet at this point) ─── */
 function Loader() {
   const [prog, setProg] = useState(0);
   useEffect(() => {
@@ -115,8 +135,8 @@ function Loader() {
     <div style={{ minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", background:"#FFFBF0", fontFamily:"'Cormorant Garamond', serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600;700&display=swap');`}</style>
       <div style={{ textAlign:"center", width:240 }}>
-        <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:36, letterSpacing:6, textTransform:"uppercase", color:"#C8001A", marginBottom:6, fontWeight:300 }}>Spice Delight</div>
-        <div style={{ fontSize:9, letterSpacing:8, textTransform:"uppercase", color:"rgba(200,0,26,.35)", marginBottom:32, fontWeight:500 }}>North Indian · Bangalore</div>
+        <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:36, letterSpacing:6, textTransform:"uppercase", color:"#C8001A", marginBottom:6, fontWeight:300 }}>Welcome</div>
+        <div style={{ fontSize:9, letterSpacing:8, textTransform:"uppercase", color:"rgba(200,0,26,.35)", marginBottom:32, fontWeight:500 }}>Loading your table</div>
         <div style={{ height:1, background:"rgba(200,0,26,.12)", borderRadius:1, overflow:"hidden", position:"relative" }}>
           <div style={{ position:"absolute", inset:0, background:"linear-gradient(90deg,#C8001A,#FF9A00)", transformOrigin:"left", transform:`scaleX(${prog/100})`, transition:"transform .06s linear", borderRadius:1 }} />
         </div>
@@ -132,14 +152,8 @@ function Loader() {
 interface TableInfo { token: string | null; table: string | null; }
 
 /* ══════════════════════════════════════════════ */
-export default function SpiceDelightLuxury() {
+export default function RestaurantLandingPage() {
   const router = useRouter();
-  const isValidToken = (t: string | null) => {
-  return !!t && t.length > 10;
-};
-
-  // Safe navigation: only accesses window inside useCallback (called client-side)
- 
 
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
@@ -152,61 +166,69 @@ export default function SpiceDelightLuxury() {
   const [mobOpen, setMobOpen] = useState(false);
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
 
+  // ── Restaurant data from GET /api/customer/restaurant ──
+  const [restaurantData, setRestaurantData] = useState<RestaurantApiData | null>(null);
+  const [restaurantError, setRestaurantError] = useState<string>("");
+
   const pxWrapRef = useRef<HTMLDivElement | null>(null);
   const pxImgRef  = useRef<HTMLImageElement | null>(null);
 
   const [aboutRef, aboutVis] = useReveal(0.06);
   const [menuRef, menuVis]   = useReveal(0.05);
-  const [revRef, revVis]     = useReveal(0.05);
   const [ctaRef, ctaVis]     = useReveal(0.04);
 
-const navigate = useCallback(() => {
-  if (!tableInfo?.token) return;
-
-  let url = `/customer/cus-detail?token=${tableInfo.token}`;
-
-  if (tableInfo.table) {
-    url += `&tableNumber=${tableInfo.table}`;
-  }
-
-  router.push(url);
-}, [router, tableInfo]);
-
+  const navigate = useCallback(() => {
+    if (!tableInfo?.token) return;
+    let url = `/customer/cus-detail?token=${tableInfo.token}`;
+    if (tableInfo.table) url += `&tableNumber=${tableInfo.table}`;
+    router.push(url);
+  }, [router, tableInfo]);
 
   // All window/localStorage access inside useEffect — SSR safe
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    const table =
+      params.get("table") ||
+      params.get("tableNo") ||
+      params.get("tableNumber");
 
-  const token =
-    params.get("token");
+    if (!token) {
+      console.error("Missing token");
+      return;
+    }
 
-  const table =
-    params.get("table") ||
-    params.get("tableNo") ||
-    params.get("tableNumber");
+    const existingSession = getSession();
+    const session = {
+      token,
+      tableNumber: table || null,
+      user: existingSession?.user || null,
+      cart: existingSession?.cart || [],
+      orderId: existingSession?.orderId || null,
+    };
+    saveSession(session);
 
-  if (!token) {
-    console.error("Missing token");
-    return;
-  }
+    setTableInfo({ token: session.token, table: session.tableNumber });
+  }, []);
 
-  const existingSession = getSession();
-
-  const session = {
-    token,
-    tableNumber: table || null,
-    user: existingSession?.user || null,
-    cart: existingSession?.cart || [],
-    orderId: existingSession?.orderId || null,
-  };
-
-  saveSession(session);
-
-  setTableInfo({
-    token: session.token,
-    table: session.tableNumber,
-  });
-}, []);
+  // ── Fetch restaurant details once we have a token ──
+  useEffect(() => {
+    if (!tableInfo?.token) return;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/customer/restaurant`, {
+          headers: { Authorization: `Bearer ${tableInfo.token}` },
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json?.message || "Failed to load restaurant details");
+        setRestaurantData(json.data as RestaurantApiData);
+        setRestaurantError("");
+      } catch (err) {
+        console.error("Restaurant fetch error:", err);
+        setRestaurantError(err instanceof Error ? err.message : "Unable to load restaurant details.");
+      }
+    })();
+  }, [tableInfo?.token]);
 
   useEffect(() => {
     const t = setTimeout(() => { setLoading(false); setTimeout(() => setRevealed(true), 40); }, 1400);
@@ -254,6 +276,23 @@ useEffect(() => {
 
   const sz = (s: number): React.CSSProperties => ({ width: s, height: s, flexShrink: 0 });
 
+  // ── Derived, API-driven display values (safe fallbacks while loading) ──
+  const restaurant   = restaurantData?.restaurant;
+  const contacts     = restaurantData?.contacts;
+  const name         = restaurant?.name || "Our Restaurant";
+  const restaurantType = restaurant?.restaurant_type || "Restaurant";
+  const city         = restaurant?.city || "";
+  const state        = restaurant?.state || "";
+  const address      = restaurant?.address || "";
+  const fullAddress  = [address, city, state].filter(Boolean).join(", ");
+  const phone        = contacts?.phone || null;
+  const email        = contacts?.email || null;
+  const tableNumber  = restaurantData?.table?.table_number || tableInfo?.table;
+  const tagline      = city ? `${restaurantType} · ${city}` : restaurantType;
+  const mapsHref     = fullAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
+    : "https://maps.google.com";
+
   return (
     <>
       <style>{CSS}</style>
@@ -265,12 +304,18 @@ useEffect(() => {
       {/* Table banner */}
       {tableInfo && (
         <div className="tbanner">
-          {tableInfo.table && (
-            <span><Icon.Pin style={{ ...sz(12), marginRight:5 }} /> Table {tableInfo.table}</span>
+          {tableNumber && (
+            <span><Icon.Pin style={{ ...sz(12), marginRight:5 }} /> Table {tableNumber}</span>
           )}
           {tableInfo.token && (
             <span className="tbadge"><Icon.Check style={{ ...sz(11), marginRight:4 }} /> Scan &amp; Order Active</span>
           )}
+        </div>
+      )}
+
+      {restaurantError && (
+        <div className="rbanner">
+          Couldn&apos;t load restaurant details right now — you can still browse and order.
         </div>
       )}
 
@@ -281,12 +326,12 @@ useEffect(() => {
             <Icon.Flame style={{ ...sz(18), color:"#C8001A" }} />
           </div>
           <div>
-            <strong className="nname">Spice Delight</strong>
-            <span className="ntag">North Indian · Bangalore</span>
+            <strong className="nname">{name}</strong>
+            <span className="ntag">{tagline}</span>
           </div>
         </div>
         <ul className="nlinks">
-          {["about","menu","reviews","contact"].map(s => (
+          {["about","menu","contact"].map(s => (
             <li key={s}><a onClick={() => scrollTo(s)}>{s.charAt(0).toUpperCase() + s.slice(1)}</a></li>
           ))}
         </ul>
@@ -302,7 +347,7 @@ useEffect(() => {
 
       {/* Mobile menu */}
       <div className={`mmenu${mobOpen ? " on" : ""}`} style={{ top: tableInfo ? "104px" : "68px" }}>
-        {["about","menu","reviews","contact"].map(s => (
+        {["about","menu","contact"].map(s => (
           <a key={s} onClick={() => { scrollTo(s); setMobOpen(false); }}>
             {s.charAt(0).toUpperCase() + s.slice(1)}
           </a>
@@ -320,7 +365,7 @@ useEffect(() => {
           <div className="hphoto">
             {BG_SLIDES.map((src, i) => (
               <div key={i} className={`hslide${i === slideIdx ? " on" : i === prevIdx ? " out" : ""}`}>
-                <img src={src} alt={`Dish ${i + 1}`} />
+                <img src={src} alt="" />
               </div>
             ))}
             <div className="hcounter">
@@ -342,16 +387,15 @@ useEffect(() => {
           <div className="hcont">
             <div className={`hbadge${titlePhase >= 1 ? " show" : ""}`}>
               <div className="hpulse" />
-              <span>Open Now · MG Road, Bangalore</span>
+              <span>Open Now{city ? ` · ${city}` : ""}</span>
             </div>
             <h1 className="htitle">
-              <span className={`hl${titlePhase >= 1 ? " show" : ""}`}>Where Every</span>
-              <span className={`hl accent${titlePhase >= 2 ? " show" : ""}`} style={{ transitionDelay:".1s" }}>Spice Tells</span>
-              <span className={`hl${titlePhase >= 3 ? " show" : ""}`} style={{ transitionDelay:".2s" }}>a Story.</span>
+              <span className={`hl${titlePhase >= 1 ? " show" : ""}`}>Welcome to</span>
+              <span className={`hl accent${titlePhase >= 2 ? " show" : ""}`} style={{ transitionDelay:".1s" }}>{name}</span>
             </h1>
             <p className={`hsub${titlePhase >= 3 ? " show" : ""}`} style={{ transitionDelay:".5s" }}>
-              Authentic North Indian flavours crafted with care in the heart of Bangalore.
-              From slow-cooked dals to smoky tandoor — every plate is a journey north.
+              Freshly prepared {restaurantType.toLowerCase()} dining, crafted with care and served with warmth —
+              every visit here is made to feel special.
             </p>
             <div className={`hbtns${titlePhase >= 3 ? " show" : ""}`} style={{ transitionDelay:".68s" }}>
               <button className="bprim" onClick={() => navigate()} onMouseEnter={ih} onMouseLeave={il}>
@@ -365,42 +409,18 @@ useEffect(() => {
               </button>
             </div>
             <div className={`htags${titlePhase >= 3 ? " show" : ""}`} style={{ transitionDelay:".86s" }}>
-              <span><Icon.Leaf style={{ ...sz(12), color:"#FF9A00", marginRight:5 }} />Pure Veg Available</span>
-              <span><Icon.Flame style={{ ...sz(12), color:"#FF9A00", marginRight:5 }} />Live Tandoor</span>
+              <span><Icon.Sparkle style={{ ...sz(12), color:"#FF9A00", marginRight:5 }} />Fresh Ingredients Daily</span>
+              <span><Icon.Award style={{ ...sz(12), color:"#FF9A00", marginRight:5 }} />Trusted Quality</span>
               <span><Icon.Globe style={{ ...sz(12), color:"#FF9A00", marginRight:5 }} />Dine-In &amp; Takeaway</span>
-            </div>
-            <div className={`hstats${titlePhase >= 3 ? " show" : ""}`} style={{ transitionDelay:"1.05s" }}>
-              {([["200+","Daily Diners"],["4.8","Google Rating"],["60+","Menu Items"]] as const).map(([n, l]) => (
-                <div key={l} className="hstat">
-                  <span className="hstat-n">{n}</span>
-                  <span className="hstat-l">{l}</span>
-                </div>
-              ))}
             </div>
           </div>
         </section>
-
-        {/* STATS BAR */}
-        <div className="statsbar">
-          {([
-            [<Icon.Award key="a" style={{ ...sz(20) }} />,"200+","Daily Diners"],
-            [<Icon.Star  key="b" style={{ ...sz(20) }} />,"4.8","Google Rating"],
-            [<Icon.Chef  key="c" style={{ ...sz(20) }} />,"60+","Menu Items"],
-            [<Icon.Clock key="d" style={{ ...sz(20) }} />,"15+","Years of Craft"],
-          ] as [JSX.Element, string, string][]).map(([ic, n, l]) => (
-            <div key={l} className="sitem">
-              <div className="sicon">{ic}</div>
-              <span className="snum">{n}</span>
-              <span className="slbl2">{l}</span>
-            </div>
-          ))}
-        </div>
 
         {/* MARQUEE RED */}
         <div className="mqred">
           <div className="mqt">
             {[...Array(2)].flatMap((_, li) =>
-              ["Butter Chicken","Garlic Naan","Dal Makhani","Seekh Kebab","Dum Biryani","Paneer Tikka","Masala Chai","Gulab Jamun"].map((t, i) => (
+              ["Fresh Ingredients","Warm Hospitality","Quick Service","Hygienic Kitchen","Great Value","Dine-In & Takeaway"].map((t, i) => (
                 <span key={`${li}-${i}`} className="mqi">
                   <Icon.Diamond style={{ ...sz(9), marginRight:8, opacity:.7 }} />{t}
                 </span>
@@ -417,25 +437,25 @@ useEffect(() => {
                 <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=85&auto=format&fit=crop" alt="Interior" />
                 <div className="aglow" />
               </div>
-              <div className="abadge">Est. 2009 · Bangalore</div>
+              {city && <div className="abadge">{restaurantType} · {city}</div>}
             </div>
             <div className="atext">
               <div className="slbl">Our Story</div>
-              <h2>Crafted with <em>Tradition,</em><br />Served with Love.</h2>
-              <p className="bp">Born on the vibrant MG Road, Spice Delight began as a humble café with one mission — to bring the bold, comforting flavours of North India to every table in Bangalore.</p>
-              <p className="bp">Each recipe is a family heirloom — slow-cooked gravies, hand-rolled breads fresh from the tandoor, and spice blends ground daily in our kitchen.</p>
+              <h2>Crafted with <em>Care,</em><br />Served with Warmth.</h2>
+              <p className="bp">
+                {restaurant?.description ||
+                  `${name} is committed to bringing you a memorable dining experience — thoughtfully prepared food, friendly service, and a welcoming space.`}
+              </p>
               <div className="afacts">
-                {([
-                  [<Icon.Flame key="f" style={{ ...sz(18) }} />, "Fresh Daily",    "Spices ground every morning. No shortcuts."],
-                  [<Icon.Leaf  key="l" style={{ ...sz(18) }} />, "Veg Friendly",   "20+ pure veg options always available."],
-                  [<Icon.Award key="aw" style={{ ...sz(18) }} />,"Live Tandoor",   "Clay oven fires all day for smoky char."],
-                  [<Icon.Pin   key="p" style={{ ...sz(18) }} />, "MG Road",        "Heart of Bangalore's dining district."],
-                ] as [JSX.Element, string, string][]).map(([ic, t, d]) => (
-                  <div key={t} className="af" onMouseEnter={ih} onMouseLeave={il}>
-                    <div className="aficon">{ic}</div>
-                    <div><div className="aft">{t}</div><div className="afd">{d}</div></div>
-                  </div>
-                ))}
+                {WHY_US.slice(0, 4).map((f) => {
+                  const FIcon = Icon[f.icon];
+                  return (
+                    <div key={f.title} className="af" onMouseEnter={ih} onMouseLeave={il}>
+                      <div className="aficon"><FIcon style={{ ...sz(18) }} /></div>
+                      <div><div className="aft">{f.title}</div><div className="afd">{f.desc}</div></div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -458,7 +478,7 @@ useEffect(() => {
         <div className="mqcream">
           <div className="mqt rev">
             {[...Array(2)].flatMap((_, li) =>
-              ["Live Tandoor","Fresh Spices Daily","MG Road Bangalore","4.8 Google Rating","Dine-In & Takeaway","Open Till 11 PM","Master Chef Kitchen"].map((t, i) => (
+              ["Freshly Prepared","Friendly Service","Clean & Hygienic","Great Value","Open Daily","Dine-In & Takeaway"].map((t, i) => (
                 <span key={`${li}-${i}`} className="mqci">
                   <Icon.Check style={{ ...sz(11), color:"#C8001A", marginRight:8 }} />{t}
                 </span>
@@ -467,38 +487,24 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* ═══ MENU ═══ */}
+        {/* ═══ WHY US / MENU CTA ═══ */}
         <section id="menu" className="menu-sec" ref={menuRef as React.RefObject<HTMLElement>}>
-          <Reveal vis={menuVis} delay={0}><div className="slbl">Our Menu</div></Reveal>
-          <Reveal vis={menuVis} delay={.1}><h2>A Feast for <em>Every Craving.</em></h2></Reveal>
-          <Reveal vis={menuVis} delay={.2}><p className="bp">Sixty dishes — starters, mains, breads, rice, desserts — all cooked to order.</p></Reveal>
+          <Reveal vis={menuVis} delay={0}><div className="slbl">Why Guests Choose Us</div></Reveal>
+          <Reveal vis={menuVis} delay={.1}><h2>Good Food, <em>Done Right.</em></h2></Reveal>
+          <Reveal vis={menuVis} delay={.2}><p className="bp">Everything is cooked to order, with quality and hospitality front and centre.</p></Reveal>
           <div className={`mgrid${menuVis ? " vis" : ""}`}>
-            {MENU_ITEMS.map((item, i) => (
-              <div key={item.id} className="mc" style={{ transitionDelay:`${i * .075}s` }} onMouseEnter={ih} onMouseLeave={il}>
-                <div className="mcimg">
-                  <img src={item.img} alt={item.name} />
-                  <div className="mcbadge">{item.badge}</div>
-                  {item.veg && <div className="vegdot" />}
-                  <div className="mcov" />
-                </div>
-                <div className="mcbody">
-                  <div className="mcname">{item.name}</div>
-                  <div className="mcdesc">{item.desc}</div>
-                  <div className="mcfoot">
-                    <div>
-                      <div className="mcprice">&#8377;{item.price}</div>
-                      <div className="mcrating">
-                        <Icon.Star style={{ ...sz(11), color:"#FFB700", marginRight:3 }} />
-                        {item.rating}
-                      </div>
-                    </div>
-                    <button className="mcadd" onClick={() => navigate()}>
-                      <Icon.Plus style={{ ...sz(16) }} />
-                    </button>
+            {WHY_US.map((item, i) => {
+              const FIcon = Icon[item.icon];
+              return (
+                <div key={item.title} className="mc" style={{ transitionDelay:`${i * .075}s` }} onMouseEnter={ih} onMouseLeave={il}>
+                  <div className="mcicon-wrap"><FIcon style={{ ...sz(26), color:"#C8001A" }} /></div>
+                  <div className="mcbody">
+                    <div className="mcname">{item.title}</div>
+                    <div className="mcdesc">{item.desc}</div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <Reveal vis={menuVis} delay={.55} style={{ textAlign:"center", marginTop:44 }}>
             <button className="bprim" onClick={() => navigate()} onMouseEnter={ih} onMouseLeave={il}>
@@ -516,57 +522,22 @@ useEffect(() => {
           <div className="pxcont">
             <Icon.Diamond style={{ ...sz(22), color:"#FFB700", marginBottom:16, filter:"drop-shadow(0 0 14px rgba(255,183,0,.65))" }} />
             <blockquote>&ldquo;Food is not just eating energy. It&apos;s an experience.&rdquo;</blockquote>
-            <cite>— The Spice Delight Philosophy · MG Road, Bangalore</cite>
+            <cite>— The {name} Philosophy{city ? ` · ${city}` : ""}</cite>
           </div>
         </div>
-
-        {/* ═══ REVIEWS ═══ */}
-        <section id="reviews" className="rev-sec" ref={revRef as React.RefObject<HTMLElement>}>
-          <Reveal vis={revVis} delay={0}><div className="slbl">Reviews</div></Reveal>
-          <Reveal vis={revVis} delay={.1}><h2>Our Guests <em>Say It Best.</em></h2></Reveal>
-          <div className={`rgrid${revVis ? " vis" : ""}`}>
-            {REVIEWS.map((r, i) => (
-              <div key={i} className="rcard" style={{ transitionDelay:`${i * .1}s` }} onMouseEnter={ih} onMouseLeave={il}>
-                <div className="rstars">
-                  {Array.from({ length: r.stars }).map((_, j) => (
-                    <Icon.Star key={j} style={{ ...sz(13), color:"#FFB700" }} />
-                  ))}
-                </div>
-                <p className="rquote">&ldquo;{r.q}&rdquo;</p>
-                <div className="rauthor">
-                  <div className="rav">{r.name[0]}</div>
-                  <div>
-                    <div className="rname">{r.name}</div>
-                    <div className="rloc">{r.loc}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
         {/* ═══ CONTACT ═══ */}
         <section id="contact" className="contact-sec">
           <div className="slbl">Find Us</div>
-          <h2>Visit <em>Spice Delight</em> on MG Road.</h2>
+          <h2>Visit <em>{name}</em>{city ? ` in ${city}.` : "."}</h2>
           <div className="cgrid">
             <div>
-              <div className="ccard">
-                <div className="ccardtitle">Opening Hours</div>
-                {([["Monday – Friday","11:00 AM – 11:00 PM"],["Saturday","10:00 AM – 11:30 PM"],["Sunday","10:00 AM – 10:30 PM"]] as const).map(([d, t]) => (
-                  <div key={d} className="hrow">
-                    <span className="hday">{d}</span>
-                    <span className="htime">{t}</span>
-                    <span className="hstatus">Open</span>
-                  </div>
-                ))}
-              </div>
               <div className="mapf">
                 <img src="https://images.unsplash.com/photo-1569336415962-a4bd9f69c07a?w=800&q=70&auto=format&fit=crop" alt="Map" />
                 <div className="mapo">
                   <Icon.Pin style={{ ...sz(26), color:"#C8001A" }} />
-                  <strong>MG Road, Bangalore</strong>
-                  <a href="https://maps.google.com" target="_blank" rel="noreferrer">
+                  <strong>{fullAddress || "Address coming soon"}</strong>
+                  <a href={mapsHref} target="_blank" rel="noreferrer">
                     Open in Maps <Icon.Arrow style={{ ...sz(11), marginLeft:4 }} />
                   </a>
                 </div>
@@ -574,18 +545,26 @@ useEffect(() => {
             </div>
             <div className="ccard">
               <div className="ccardtitle">Contact &amp; Info</div>
-              {([
-                [<Icon.Pin   key="pin"   style={{ ...sz(17) }} />, "Address", "MG Road, Bangalore, KA 560001"],
-                [<Icon.Phone key="ph"    style={{ ...sz(17) }} />, "Phone",   <a key="ph-a" href="tel:8888888888">+91 88888 88888</a>],
-                [<Icon.Mail  key="ml"    style={{ ...sz(17) }} />, "Email",   <a key="ml-a" href="mailto:contact@spicedelight.com">contact@spicedelight.com</a>],
-                [<Icon.Chef  key="ch"    style={{ ...sz(17) }} />, "Type",    "North Indian · Café · Dine-In & Takeaway"],
-                [<Icon.Clock key="cl"    style={{ ...sz(17) }} />, "Hours",   "Open 7 days · 10 AM – 11 PM"],
-              ] as [JSX.Element, string, React.ReactNode][]).map(([ic, l, v]) => (
-                <div key={String(l)} className="crow">
-                  <div className="cicon">{ic}</div>
-                  <div><div className="clbl">{l}</div><div className="cval">{v}</div></div>
+              <div className="crow">
+                <div className="cicon"><Icon.Pin style={{ ...sz(17) }} /></div>
+                <div><div className="clbl">Address</div><div className="cval">{fullAddress || "Not available"}</div></div>
+              </div>
+              {phone && (
+                <div className="crow">
+                  <div className="cicon"><Icon.Phone style={{ ...sz(17) }} /></div>
+                  <div><div className="clbl">Phone</div><div className="cval"><a href={`tel:${phone}`}>{phone}</a></div></div>
                 </div>
-              ))}
+              )}
+              {email && (
+                <div className="crow">
+                  <div className="cicon"><Icon.Mail style={{ ...sz(17) }} /></div>
+                  <div><div className="clbl">Email</div><div className="cval"><a href={`mailto:${email}`}>{email}</a></div></div>
+                </div>
+              )}
+              <div className="crow">
+                <div className="cicon"><Icon.Chef style={{ ...sz(17) }} /></div>
+                <div><div className="clbl">Type</div><div className="cval">{restaurantType} · Dine-In &amp; Takeaway</div></div>
+              </div>
               <button className="bprim" style={{ width:"100%", justifyContent:"center", marginTop:22 }}
                 onClick={() => navigate()} onMouseEnter={ih} onMouseLeave={il}>
                 <span className="bshine" />
@@ -604,7 +583,7 @@ useEffect(() => {
             </div>
             <h2>Hungry? <em>Come In.</em><br />We&apos;re Ready for You.</h2>
             <p className="bp" style={{ maxWidth:460, margin:"14px auto 0", textAlign:"center" }}>
-              Walk in anytime or call ahead. Hot food, warm service, MG Road vibes — every day.
+              Walk in anytime, or start your order right from your table.
             </p>
             <div className="ctabtns">
               <button className="bprim" onClick={() => navigate()} onMouseEnter={ih} onMouseLeave={il}>
@@ -612,10 +591,12 @@ useEffect(() => {
                 <Icon.Bag style={{ ...sz(14), marginRight:7 }} />
                 Start Your Order
               </button>
-              <a href="mailto:contact@spicedelight.com" className="bout2">
-                <Icon.Mail style={{ ...sz(14), marginRight:7 }} />
-                Send a Message
-              </a>
+              {email && (
+                <a href={`mailto:${email}`} className="bout2">
+                  <Icon.Mail style={{ ...sz(14), marginRight:7 }} />
+                  Send a Message
+                </a>
+              )}
             </div>
           </div>
         </section>
@@ -626,14 +607,14 @@ useEffect(() => {
             <div>
               <div className="fbrand">
                 <Icon.Flame style={{ ...sz(20), color:"#FFD500" }} />
-                Spice Delight
+                {name}
               </div>
-              <p className="fdesc">North Indian cuisine crafted with tradition, served with love. MG Road&apos;s favourite café since 2009.</p>
+              <p className="fdesc">{restaurantType} dining, crafted with care and served with warmth{city ? ` in ${city}` : ""}.</p>
             </div>
             <div>
               <div className="fh">Quick Links</div>
               <ul className="flinks">
-                {([["menu","Our Menu"],["about","About Us"],["reviews","Reviews"],["contact","Find Us"]] as const).map(([id, label]) => (
+                {([["menu","Our Menu"],["about","About Us"],["contact","Find Us"]] as const).map(([id, label]) => (
                   <li key={id}><a onClick={() => scrollTo(id)}>{label}</a></li>
                 ))}
               </ul>
@@ -641,18 +622,15 @@ useEffect(() => {
             <div>
               <div className="fh">Contact</div>
               <ul className="flinks">
-                <li><a href="tel:8888888888">+91 88888 88888</a></li>
-                <li><a href="mailto:contact@spicedelight.com">contact@spicedelight.com</a></li>
-                <li><a>MG Road, Bangalore</a></li>
-                <li><a>Open 10AM – 11PM</a></li>
+                {phone && <li><a href={`tel:${phone}`}>{phone}</a></li>}
+                {email && <li><a href={`mailto:${email}`}>{email}</a></li>}
+                {fullAddress && <li><a>{fullAddress}</a></li>}
+                {!phone && !email && !fullAddress && <li><a>Details coming soon</a></li>}
               </ul>
             </div>
           </div>
           <div className="fbot">
-            <span>© 2026 Spice Delight. All rights reserved.</span>
-            <span style={{ color:"#FFD500", display:"flex", alignItems:"center", gap:6 }}>
-              <Icon.Flame style={{ ...sz(12) }} /> Made with love in Bangalore
-            </span>
+            <span>© {new Date().getFullYear()} {name}. All rights reserved.</span>
           </div>
         </footer>
 
@@ -662,7 +640,7 @@ useEffect(() => {
 }
 
 /* ══════════════════════════════════
-   LUXURY CSS
+   THEME CSS — unchanged colors/fonts
 ══════════════════════════════════ */
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600;700&display=swap');
@@ -693,6 +671,8 @@ button { font-family: inherit; border: none; cursor: pointer; background: none; 
 .tbanner { position:fixed; top:0; left:0; right:0; z-index:2000; height:36px; background:linear-gradient(90deg,var(--crimson),var(--saffron)); display:flex; align-items:center; justify-content:center; gap:20px; font-size:9px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.92); font-family:var(--font-body); }
 .tbanner span { display:flex; align-items:center; gap:6px; }
 .tbadge { background:rgba(255,255,255,.15); padding:3px 12px; border-radius:50px; border:1px solid rgba(255,255,255,.25); }
+
+.rbanner { position:fixed; top:36px; left:0; right:0; z-index:1999; background:rgba(200,0,26,.06); color:var(--crimson); font-size:11px; text-align:center; padding:6px 12px; font-weight:600; letter-spacing:.5px; }
 
 .pwrap { opacity:0; transform:translateY(10px); transition:opacity 1s cubic-bezier(.16,1,.3,1),transform 1s cubic-bezier(.16,1,.3,1); }
 .pwrap.in { opacity:1; transform:translateY(0); }
@@ -757,20 +737,6 @@ nav.sc { background:rgba(255,251,242,.97); box-shadow:0 1px 0 var(--border),0 8p
 .htags { display:flex; flex-wrap:wrap; gap:16px; opacity:0; transform:translateY(12px); transition:opacity .85s,transform .85s; }
 .htags.show { opacity:1; transform:translateY(0); }
 .htags span { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); font-weight:500; display:flex; align-items:center; }
-.hstats { display:flex; gap:0; margin-top:32px; padding-top:24px; border-top:1px solid rgba(200,0,26,.09); opacity:0; transform:translateY(12px); transition:opacity .85s,transform .85s; }
-.hstats.show { opacity:1; transform:translateY(0); }
-.hstat { padding:0 28px 0 0; margin:0 28px 0 0; border-right:1px solid rgba(200,0,26,.09); }
-.hstat:last-child { border:none; padding:0; margin:0; }
-.hstat-n { font-family:var(--font-display); font-size:clamp(24px,3vw,36px); font-weight:600; color:var(--crimson); display:block; line-height:1; letter-spacing:-.5px; }
-.hstat-l { font-size:8px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); font-weight:500; display:block; margin-top:4px; }
-
-.statsbar { display:grid; grid-template-columns:repeat(4,1fr); background:var(--white); border-bottom:1px solid var(--border); }
-.sitem { padding:24px 16px; text-align:center; border-right:1px solid var(--border); display:flex; flex-direction:column; align-items:center; gap:4px; transition:background .3s; }
-.sitem:last-child { border:none; }
-.sitem:hover { background:rgba(200,0,26,.02); }
-.sicon { color:var(--crimson); opacity:.55; margin-bottom:4px; }
-.snum { font-family:var(--font-display); font-size:clamp(24px,3.8vw,40px); font-weight:600; color:var(--crimson); display:block; line-height:1; letter-spacing:-.5px; }
-.slbl2 { font-size:8px; letter-spacing:2.5px; text-transform:uppercase; color:var(--muted); font-weight:500; display:block; }
 
 .mqred { overflow:hidden; padding:15px 0; background:var(--crimson); }
 .mqcream { overflow:hidden; padding:14px 0; background:var(--cream3); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
@@ -818,24 +784,13 @@ h2 em { font-style:italic; color:var(--crimson); font-weight:400; }
 
 .menu-sec { background:var(--cream); }
 .mgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:30px; }
-.mc { border-radius:4px; overflow:hidden; background:var(--white); border:1px solid var(--border); transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s,opacity .7s; box-shadow:0 4px 16px rgba(200,0,26,.04); opacity:0; transform:translateY(28px); }
+.mc { border-radius:4px; overflow:hidden; background:var(--white); border:1px solid var(--border); transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s,opacity .7s; box-shadow:0 4px 16px rgba(200,0,26,.04); opacity:0; transform:translateY(28px); padding:26px 22px; }
 .mgrid.vis .mc { opacity:1; transform:translateY(0); }
 .mc:hover { transform:translateY(-8px) !important; box-shadow:0 28px 60px rgba(200,0,26,.12); border-color:rgba(200,0,26,.18); }
-.mcimg { height:clamp(148px,19vw,205px); overflow:hidden; position:relative; }
-.mcimg img { width:100%; height:100%; object-fit:cover; transition:transform 6s ease; }
-.mc:hover .mcimg img { transform:scale(1.07); }
-.mcov { position:absolute; inset:0; background:linear-gradient(180deg,transparent 40%,rgba(28,5,5,.38)); }
-.mcbadge { position:absolute; top:12px; left:12px; background:var(--crimson); padding:4px 10px; border-radius:2px; font-size:8px; letter-spacing:2px; text-transform:uppercase; color:#fff; font-weight:600; z-index:1; }
-.vegdot { position:absolute; top:12px; right:12px; width:20px; height:20px; border:2px solid #22c55e; background:rgba(255,255,255,.9); border-radius:4px; display:flex; align-items:center; justify-content:center; z-index:1; }
-.vegdot::before { content:''; width:8px; height:8px; border-radius:50%; background:#22c55e; display:block; }
-.mcbody { padding:16px 18px 18px; }
-.mcname { font-family:var(--font-display); font-size:19px; font-weight:600; margin-bottom:5px; color:var(--dark); letter-spacing:.2px; line-height:1.2; }
-.mcdesc { font-size:11px; color:var(--body); line-height:1.65; margin-bottom:14px; font-weight:300; }
-.mcfoot { display:flex; align-items:center; justify-content:space-between; }
-.mcprice { font-family:var(--font-display); font-size:22px; font-weight:600; color:var(--crimson); letter-spacing:-.3px; }
-.mcrating { font-size:10px; color:var(--muted); font-weight:500; display:flex; align-items:center; margin-top:3px; letter-spacing:.5px; }
-.mcadd { width:34px; height:34px; background:var(--crimson); border-radius:2px; display:flex; align-items:center; justify-content:center; color:#fff; transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s; cursor:pointer; box-shadow:0 4px 14px rgba(200,0,26,.28); }
-.mcadd:hover { transform:scale(1.18); box-shadow:0 8px 24px rgba(200,0,26,.42); }
+.mcicon-wrap { width:52px; height:52px; border-radius:12px; background:rgba(200,0,26,.06); display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
+.mcbody { padding:0; }
+.mcname { font-family:var(--font-display); font-size:19px; font-weight:600; margin-bottom:6px; color:var(--dark); letter-spacing:.2px; line-height:1.2; }
+.mcdesc { font-size:12px; color:var(--body); line-height:1.65; font-weight:300; }
 
 .pxwrap { height:clamp(300px,44vw,460px); overflow:hidden; position:relative; }
 .pxwrap img { width:100%; height:135%; object-fit:cover; will-change:transform; transform:translateY(-15%); }
@@ -844,31 +799,13 @@ h2 em { font-style:italic; color:var(--crimson); font-weight:400; }
 .pxcont blockquote { font-family:var(--font-display); font-size:clamp(22px,4vw,52px); font-weight:300; font-style:italic; color:rgba(255,255,255,.92); line-height:1.35; max-width:780px; letter-spacing:-.3px; }
 .pxcont cite { display:block; margin-top:16px; font-size:8px; letter-spacing:5px; text-transform:uppercase; color:var(--gold); font-style:normal; font-weight:500; }
 
-.rev-sec { background:var(--cream2); }
-.rgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:40px; }
-.rcard { padding:28px; border-radius:4px; background:var(--white); border:1px solid var(--border); position:relative; overflow:hidden; opacity:0; transform:translateY(24px); transition:transform .5s cubic-bezier(.16,1,.3,1),box-shadow .5s,opacity .7s,border-color .3s; box-shadow:0 4px 16px rgba(200,0,26,.04); }
-.rgrid.vis .rcard { opacity:1; transform:translateY(0); }
-.rcard::before { content:'"'; position:absolute; top:-22px; left:14px; font-family:var(--font-display); font-size:130px; color:rgba(200,0,26,.04); line-height:1; pointer-events:none; }
-.rcard:hover { transform:translateY(-6px) !important; box-shadow:0 22px 54px rgba(200,0,26,.1); border-color:rgba(200,0,26,.18); }
-.rstars { display:flex; gap:2px; margin-bottom:14px; }
-.rquote { font-size:13px; color:var(--body); line-height:1.85; font-style:italic; margin-bottom:18px; font-weight:300; font-family:var(--font-display); font-size:15px; letter-spacing:.1px; }
-.rauthor { display:flex; align-items:center; gap:10px; }
-.rav { width:36px; height:36px; border-radius:2px; background:linear-gradient(135deg,var(--crimson),var(--saffron)); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:17px; font-weight:600; color:#fff; flex-shrink:0; }
-.rname { font-size:12px; font-weight:600; color:var(--dark); letter-spacing:.3px; }
-.rloc { font-size:9px; color:var(--muted); letter-spacing:1px; font-weight:400; margin-top:2px; }
-
 .contact-sec { background:var(--cream); }
 .cgrid { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start; margin-top:30px; }
 .ccard { background:var(--white); border:1px solid var(--border); border-radius:4px; padding:28px; box-shadow:0 4px 16px rgba(200,0,26,.04); }
 .ccardtitle { font-size:8px; letter-spacing:4px; text-transform:uppercase; color:var(--crimson); font-weight:600; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid var(--border); }
-.hrow { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border-soft); }
-.hrow:last-child { border:none; }
-.hday { font-size:12px; font-weight:500; color:var(--dark); }
-.htime { font-size:11px; color:var(--body); font-weight:300; }
-.hstatus { font-size:8px; letter-spacing:1.5px; text-transform:uppercase; font-weight:600; color:#16a34a; background:rgba(22,163,74,.08); padding:3px 9px; border-radius:2px; }
-.mapf { margin-top:14px; border-radius:4px; overflow:hidden; height:195px; position:relative; border:1px solid var(--border); }
+.mapf { border-radius:4px; overflow:hidden; height:320px; position:relative; border:1px solid var(--border); }
 .mapf img { width:100%; height:100%; object-fit:cover; opacity:.45; }
-.mapo { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; }
+.mapo { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:0 20px; text-align:center; }
 .mapo strong { font-size:13px; font-weight:500; color:var(--dark); }
 .mapo a { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--crimson); background:rgba(255,255,255,.92); padding:7px 16px; border-radius:2px; border:1px solid var(--crimson); font-weight:600; transition:all .25s; display:flex; align-items:center; }
 .mapo a:hover { background:var(--crimson); color:#fff; }
@@ -913,19 +850,15 @@ footer { padding:54px 5vw 24px; background:var(--dark2); }
   .hcont{padding:44px 5vw 56px; border-top:1px solid var(--border)}
   .hcont::after{display:none}
   .htitle{font-size:clamp(38px,8vw,60px)}
-  .hstats{display:none}
   .agrid{grid-template-columns:1fr}
   .cgrid{grid-template-columns:1fr}
-  .rgrid{grid-template-columns:1fr 1fr}
   .fgrid{grid-template-columns:1fr 1fr}
   .nlinks,.ncta{display:none}
   .mhbg{display:flex!important}
-  .statsbar{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:700px){
   section{padding:60px 5vw}
   .mgrid{grid-template-columns:1fr 1fr}
-  .rgrid{grid-template-columns:1fr}
   .fgrid{grid-template-columns:1fr}
 }
 @media(max-width:480px){

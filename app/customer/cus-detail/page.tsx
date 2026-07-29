@@ -3,15 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 
-const API_URL = "https://pos-backend-s380.onrender.com";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://pos-backend-s380.onrender.com";
 
+// Generic ambience imagery — no dish names, no cuisine signalling
 const SLIDES = [
-  "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=1200&q=90&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=1200&q=90&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=1200&q=90&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=1200&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1200&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=1200&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&q=90&auto=format&fit=crop",
 ];
-const SLIDE_LABELS = ["Signature Butter Chicken", "Seekh Kebab Platter", "Dum Biryani", "Paneer Tikka"];
+const SLIDE_LABELS = ["Warm Ambience", "Fresh Ingredients", "Attentive Service", "Great Hospitality"];
 
 /* ── Icon helpers ── */
 const IconUser = ({ size = 20, ...p }: { size?: number; [key: string]: unknown }) => (
@@ -64,6 +65,30 @@ const IconMapPin = ({ size = 20, ...p }: { size?: number; [key: string]: unknown
     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
   </svg>
 );
+
+/* ── API types (matches GET /api/customer/restaurant) ── */
+interface RestaurantInfo {
+  id: string;
+  name: string;
+  description: string | null;
+  restaurant_type: string;
+  address: string;
+  city: string;
+  state: string | null;
+}
+interface TableApiInfo {
+  id: string;
+  table_number: string;
+}
+interface ContactsInfo {
+  phone: string | null;
+  email: string | null;
+}
+interface RestaurantApiData {
+  restaurant: RestaurantInfo;
+  table: TableApiInfo;
+  contacts: ContactsInfo;
+}
 
 /* ── Particle type ── */
 interface Particle {
@@ -141,19 +166,16 @@ function clearCustomerSession() {
     "customerMobile",
     "tableNumber",
     "lastOrderId",
-    // add any other session keys your app uses
   ];
   keys.forEach(k => {
     try { localStorage.removeItem(k); } catch (_) {}
   });
-  // Also clear the JWT cookie
   document.cookie = "customerJWT=; path=/; max-age=0; samesite=lax";
 }
 
 /* ── Helper: clear cart via API (best-effort, non-blocking) ── */
 async function clearCartOnServer(token: string) {
   try {
-    // Try a dedicated clear-cart endpoint if your backend has one
     const res = await fetch(`${API_URL}/api/customer/cart/clear`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -161,7 +183,6 @@ async function clearCartOnServer(token: string) {
     const json = await res.json().catch(() => ({}));
     console.log("🗑️ Cart clear response:", json);
   } catch (err) {
-    // Non-fatal — cart will be empty server-side after a new login anyway
     console.warn("Cart clear failed (non-fatal):", err);
   }
 }
@@ -182,6 +203,9 @@ export default function CustomerDetails() {
   const [entered, setEntered] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: -300, y: -300 });
   const [cursorBig, setCursorBig] = useState(false);
+
+  // ── Restaurant data from GET /api/customer/restaurant ──
+  const [restaurantData, setRestaurantData] = useState<RestaurantApiData | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -213,7 +237,6 @@ export default function CustomerDetails() {
 
     // ── KEY FIX: Clear all previous session data so no stale cart/order ──
     clearCustomerSession();
-    // Re-save table after clearing (clearCustomerSession wiped it)
     if (table) {
       try { localStorage.setItem("tableNumber", table); } catch (_) {}
     }
@@ -230,6 +253,27 @@ export default function CustomerDetails() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Fetch restaurant details once we have a token ──
+  useEffect(() => {
+    if (!qrToken) return;
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/customer/restaurant`, {
+          headers: { Authorization: `Bearer ${qrToken}` },
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json?.message || "Failed to load restaurant details");
+        setRestaurantData(json.data as RestaurantApiData);
+        // Prefer the API's table number if the URL didn't have one
+        const apiTable = json.data?.table?.table_number;
+        if (apiTable && !tableNumber) setTableNumber(apiTable.toString());
+      } catch (err) {
+        console.warn("Restaurant fetch failed (non-fatal):", err);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrToken]);
 
   const showToast = (msg: string, type: "error" | "success" = "error") => {
     setToast({ msg, type });
@@ -258,15 +302,12 @@ export default function CustomerDetails() {
       const data = res.data ?? res;
       console.log("🔐 Login response data:", JSON.stringify(data, null, 2));
 
-      // ── Clear any old session before saving new one ──
       clearCustomerSession();
 
       try {
         if (data?.token) {
           localStorage.setItem("customerJWT", data.token);
           document.cookie = `customerJWT=${data.token}; path=/; max-age=86400; samesite=lax`;
-
-          // Best-effort server-side cart clear with the NEW token
           clearCartOnServer(data.token);
         }
 
@@ -287,7 +328,7 @@ export default function CustomerDetails() {
         console.error("localStorage write error:", e);
       }
 
-      showToast("Welcome! Entering your royal experience…", "success");
+      showToast("Welcome! Taking you to the menu…", "success");
       setTimeout(() => router.push("/customer/menu"), 1500);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Server error. Try again.";
@@ -298,6 +339,11 @@ export default function CustomerDetails() {
 
   const ih = () => setCursorBig(true);
   const il = () => setCursorBig(false);
+
+  // ── Derived, API-driven display values (safe fallbacks while loading) ──
+  const restaurant = restaurantData?.restaurant;
+  const restaurantName = restaurant?.name || "Our Restaurant";
+  const restaurantType = restaurant?.restaurant_type || "Restaurant";
 
   return (
     <>
@@ -351,8 +397,7 @@ export default function CustomerDetails() {
           .od-left-content { display:flex; flex-direction:column; justify-content:space-between; position:relative; z-index:4; height:100%; padding:clamp(32px,5vw,60px); }
         }
         .od-brand-icon-lg { width:44px; height:44px; border-radius:13px; background:linear-gradient(135deg,var(--crimson),var(--saffron)); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 24px rgba(200,0,26,.4); }
-        .od-brand-name { font-family:'Abril Fatface',serif; font-size:clamp(32px,4vw,54px); color:#fff; line-height:.95; margin:18px 0 10px; }
-        .od-brand-name em { display:block; background:linear-gradient(90deg,var(--gold),var(--yellow)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; font-style:italic; font-family:'Dancing Script',cursive; font-size:.85em; }
+        .od-brand-name { font-family:'Abril Fatface',serif; font-size:clamp(28px,3.6vw,46px); color:#fff; line-height:1.05; margin:18px 0 10px; }
         .od-brand-sub { font-size:11px; color:rgba(255,235,180,.4); letter-spacing:3px; text-transform:uppercase; font-weight:700; margin-bottom:24px; }
         .od-slide-lbl-d { font-family:'Dancing Script',cursive; font-size:16px; color:rgba(255,255,255,.45); font-weight:700; margin-bottom:26px; }
         .od-step-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,183,0,.5); font-weight:800; margin-bottom:10px; }
@@ -449,13 +494,13 @@ export default function CustomerDetails() {
           <div className="od-ov1" /><div className="od-ov2" /><div className="od-grid" />
           <canvas ref={canvasRef} className="od-canvas" />
 
-          <div className="od-live"><div className="od-live-dot" />Open · 200+ Orders</div>
+          <div className="od-live"><div className="od-live-dot" />Open Now</div>
 
           <div className="od-mob-brand">
             <div className="od-mob-icon"><IconFlame size={18} /></div>
             <div>
-              <strong>Spice Delight</strong>
-              <span>Premium Dining Experience</span>
+              <strong>{restaurantName}</strong>
+              <span>{restaurantType}</span>
             </div>
           </div>
           <div className="od-mob-slide">{SLIDE_LABELS[slideIdx]}</div>
@@ -464,8 +509,8 @@ export default function CustomerDetails() {
             <div />
             <div>
               <div className="od-brand-icon-lg"><IconFlame size={22} /></div>
-              <div className="od-brand-name">Spice<br /><em>Delight</em></div>
-              <div className="od-brand-sub">Premium Dining · Step 1 of 2</div>
+              <div className="od-brand-name">{restaurantName}</div>
+              <div className="od-brand-sub">{restaurantType} · Step 1 of 2</div>
               <div className="od-slide-lbl-d">{SLIDE_LABELS[slideIdx]}</div>
               <div className="od-step-label">Step 1 of 2 — Guest Details</div>
               <div className="od-prog-bar"><div className="od-prog-fill" /></div>
@@ -476,7 +521,7 @@ export default function CustomerDetails() {
             <div className="od-trust">
               <div className="od-tc"><IconShield size={12} />Secure</div>
               <div className="od-tc"><IconClock size={12} />Fast Service</div>
-              <div className="od-tc"><IconStar size={12} />4.8 Rating</div>
+              <div className="od-tc"><IconStar size={12} />Trusted</div>
             </div>
           </div>
         </div>
@@ -498,7 +543,7 @@ export default function CustomerDetails() {
             </div>
 
             <div className="od-form-title">Guest <em>Details</em></div>
-            <div className="od-form-sub">Just two fields to access your royal menu</div>
+            <div className="od-form-sub">Just two fields to access the menu</div>
 
             <div className="od-divider">
               <div className="od-div-line" />
@@ -556,19 +601,19 @@ export default function CustomerDetails() {
               >
                 <div className="od-submit-shine" />
                 <IconArrowRight size={16} />
-                Enter Spice Delight
+                Continue to Menu
               </button>
             ) : (
               <div className="od-loading-row">
                 <div className="od-spinner" />
-                <span className="od-loading-txt">Entering your experience…</span>
+                <span className="od-loading-txt">Getting things ready…</span>
               </div>
             )}
 
             <div className="od-footnote">
               <div className="od-fn"><IconShield size={11} />Secure</div>
               <div className="od-fn"><IconMapPin size={11} />Table Verified</div>
-              <div className="od-fn"><IconClock size={11} />Open Until 11 PM</div>
+              <div className="od-fn"><IconClock size={11} />Fast Service</div>
             </div>
 
             <div className="od-footer-dots">
@@ -585,7 +630,7 @@ export default function CustomerDetails() {
             </div>
           )}
 
-          <div className="od-watermark">Spice Delight · Est. 2009</div>
+          <div className="od-watermark">{restaurantName}</div>
         </div>
       </div>
 
