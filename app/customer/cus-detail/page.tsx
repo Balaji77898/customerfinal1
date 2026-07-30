@@ -348,7 +348,7 @@ export default function CustomerDetails() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Nunito:wght@300;400;600;700;800;900&family=Dancing+Script:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
         :root {
           --white:#FFFFFF; --cream:#FFFBF2; --cream2:#FFF5DC; --cream3:#FFEDBA;
@@ -358,7 +358,7 @@ export default function CustomerDetails() {
         }
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
         html, body { height:100%; overflow-x:hidden; }
-        body { font-family:'Nunito',sans-serif; background:var(--cream); }
+        body { font-family:'Inter',sans-serif; background:var(--cream); }
         @media (pointer:fine) { body { cursor:none; } }
 
         .cur-dot { position:fixed; z-index:99999; pointer-events:none; width:10px; height:10px; background:var(--crimson); border-radius:50%; transform:translate(-50%,-50%); transition:width .2s,height .2s; }
@@ -371,15 +371,15 @@ export default function CustomerDetails() {
         .od-root.in { opacity:1; transform:scale(1); }
         @media (min-width:900px) { .od-root { flex-direction:row; } }
 
-        .od-left { position:relative; overflow:hidden; background:var(--dark2); height:200px; flex-shrink:0; }
+        .od-left { position:relative; overflow:hidden; background:var(--dark2); height:clamp(220px,46vw,320px); flex-shrink:0; }
         @media (min-width:900px) { .od-left { width:46%; height:auto; flex-shrink:0; position:sticky; top:0; height:100vh; } }
 
         .od-slide { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transform:scale(1.06); transition:opacity 1.4s ease,transform 8s ease; }
         .od-slide.on { opacity:1; transform:scale(1); }
-        .od-ov1 { position:absolute; inset:0; background:linear-gradient(135deg,rgba(28,5,5,.82) 0%,rgba(200,0,26,.12) 55%,transparent 100%); z-index:1; }
-        .od-ov2 { position:absolute; inset:0; background:linear-gradient(to top,rgba(28,5,5,.95) 0%,transparent 60%); z-index:1; }
+        .od-ov1 { position:absolute; inset:0; background:linear-gradient(135deg,rgba(20,6,6,.32) 0%,rgba(200,0,26,.06) 55%,transparent 100%); z-index:1; }
+        .od-ov2 { position:absolute; inset:0; background:linear-gradient(to top,rgba(16,5,5,.62) 0%,transparent 62%); z-index:1; }
         .od-grid { position:absolute; inset:0; z-index:2; background-image:linear-gradient(rgba(255,183,0,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,183,0,.03) 1px,transparent 1px); background-size:52px 52px; }
-        .od-canvas { position:absolute; inset:0; z-index:3; opacity:.45; }
+        .od-canvas { position:absolute; inset:0; z-index:3; opacity:.28; }
 
         .od-live { position:absolute; top:14px; right:14px; z-index:10; display:flex; align-items:center; gap:7px; background:rgba(28,5,5,.85); border:1px solid rgba(200,0,26,.28); padding:6px 12px; border-radius:50px; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,180,80,.7); font-weight:800; backdrop-filter:blur(12px); }
         .od-live-dot { width:6px; height:6px; background:#22c55e; border-radius:50%; animation:gp 1.2s infinite; flex-shrink:0; }
@@ -388,18 +388,18 @@ export default function CustomerDetails() {
         .od-mob-brand { position:absolute; bottom:0; left:0; right:0; z-index:4; display:flex; align-items:center; gap:10px; padding:14px 18px; background:linear-gradient(to top,rgba(28,5,5,.9) 0%,transparent 100%); }
         @media (min-width:900px) { .od-mob-brand { display:none; } }
         .od-mob-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,var(--crimson),var(--saffron)); display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
-        .od-mob-brand strong { display:block; font-family:'Abril Fatface',serif; font-size:17px; color:#fff; line-height:1; }
+        .od-mob-brand strong { display:block; font-family:'Inter',sans-serif; font-weight:800; letter-spacing:-.2px; font-size:17px; color:#fff; line-height:1.15; }
         .od-mob-brand span { font-size:9px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,235,180,.45); font-weight:700; }
-        .od-mob-slide { position:absolute; bottom:14px; right:14px; z-index:4; font-family:'Dancing Script',cursive; font-size:13px; color:rgba(255,255,255,.4); font-weight:700; }
+        .od-mob-slide { position:absolute; bottom:14px; right:14px; z-index:4; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,.55); font-weight:500; }
 
         .od-left-content { display:none; }
         @media (min-width:900px) {
           .od-left-content { display:flex; flex-direction:column; justify-content:space-between; position:relative; z-index:4; height:100%; padding:clamp(32px,5vw,60px); }
         }
         .od-brand-icon-lg { width:44px; height:44px; border-radius:13px; background:linear-gradient(135deg,var(--crimson),var(--saffron)); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 24px rgba(200,0,26,.4); }
-        .od-brand-name { font-family:'Abril Fatface',serif; font-size:clamp(28px,3.6vw,46px); color:#fff; line-height:1.05; margin:18px 0 10px; }
+        .od-brand-name { font-family:'Inter',sans-serif; font-weight:800; letter-spacing:-1px; font-size:clamp(26px,3.4vw,42px); color:#fff; line-height:1.1; margin:18px 0 10px; }
         .od-brand-sub { font-size:11px; color:rgba(255,235,180,.4); letter-spacing:3px; text-transform:uppercase; font-weight:700; margin-bottom:24px; }
-        .od-slide-lbl-d { font-family:'Dancing Script',cursive; font-size:16px; color:rgba(255,255,255,.45); font-weight:700; margin-bottom:26px; }
+        .od-slide-lbl-d { font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,.4); font-weight:500; margin-bottom:26px; }
         .od-step-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:rgba(255,183,0,.5); font-weight:800; margin-bottom:10px; }
         .od-prog-bar { height:3px; background:rgba(255,183,0,.12); border-radius:3px; overflow:hidden; }
         .od-prog-fill { height:100%; width:50%; background:linear-gradient(90deg,var(--crimson),var(--saffron),var(--gold)); border-radius:3px; animation:pfill .8s .3s cubic-bezier(.16,1,.3,1) both; }
@@ -418,16 +418,15 @@ export default function CustomerDetails() {
         .od-card { position:relative; width:100%; max-width:440px; animation:cardIn .8s cubic-bezier(.16,1,.3,1) .1s both; }
         @keyframes cardIn { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
 
-        .od-welcome { width:100%; background:linear-gradient(135deg,var(--crimson),var(--saffron)); border-radius:14px; padding:15px 18px; display:flex; align-items:center; gap:12px; margin-bottom:22px; box-shadow:0 10px 30px rgba(200,0,26,.22); animation:wSlide .7s cubic-bezier(.16,1,.3,1) .2s both; position:relative; overflow:hidden; }
+        .od-welcome { width:100%; background:var(--white); border-radius:14px; border:1px solid var(--border); border-left:4px solid var(--crimson); padding:15px 18px; display:flex; align-items:center; gap:12px; margin-bottom:22px; box-shadow:0 6px 20px rgba(200,0,26,.06); animation:wSlide .7s cubic-bezier(.16,1,.3,1) .2s both; position:relative; overflow:hidden; }
         @keyframes wSlide { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:translateY(0)} }
-        .od-welcome::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 18px,rgba(255,255,255,.04) 18px,rgba(255,255,255,.04) 36px); pointer-events:none; }
-        .od-w-icon { width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
-        .od-w-text strong { display:block; font-family:'Abril Fatface',serif; font-size:15px; color:#fff; line-height:1.15; }
-        .od-w-text span { font-size:11px; color:rgba(255,255,255,.7); margin-top:2px; display:block; }
-        .od-w-stars { margin-left:auto; display:flex; gap:2px; color:rgba(255,255,255,.5); flex-shrink:0; }
+        .od-w-icon { width:38px; height:38px; border-radius:10px; background:rgba(200,0,26,.08); display:flex; align-items:center; justify-content:center; color:var(--crimson); flex-shrink:0; }
+        .od-w-text strong { display:block; font-family:'Inter',sans-serif; font-weight:800; font-size:14px; color:var(--dark); line-height:1.2; }
+        .od-w-text span { font-size:11.5px; color:var(--muted); margin-top:2px; display:block; }
+        .od-w-stars { margin-left:auto; display:flex; gap:2px; color:var(--gold); flex-shrink:0; }
 
-        .od-form-title { font-family:'Abril Fatface',serif; font-size:clamp(22px,5vw,32px); color:var(--dark); margin-bottom:4px; line-height:1.05; }
-        .od-form-title em { font-style:italic; color:var(--crimson); font-family:'Dancing Script',cursive; font-size:1.1em; }
+        .od-form-title { font-family:'Fraunces',serif; font-weight:600; font-size:clamp(24px,5vw,34px); color:var(--dark); margin-bottom:4px; line-height:1.1; }
+        .od-form-title em { font-style:italic; color:var(--crimson); font-weight:500; }
         .od-form-sub { font-size:13px; color:var(--muted); margin-bottom:20px; font-weight:600; }
 
         .od-divider { display:flex; align-items:center; gap:10px; margin-bottom:18px; }
@@ -440,14 +439,14 @@ export default function CustomerDetails() {
         .od-input-wrap.filled { border-color:rgba(200,0,26,.28); }
         .od-input-icon { width:46px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--muted); transition:color .25s; }
         .od-input-wrap.focused .od-input-icon { color:var(--crimson); }
-        .od-input { flex:1; padding:15px 12px 15px 0; background:transparent; border:none; outline:none; font-family:'Nunito',sans-serif; font-size:15px; color:var(--dark); font-weight:600; min-width:0; width:100%; }
+        .od-input { flex:1; padding:15px 12px 15px 0; background:transparent; border:none; outline:none; font-family:'Inter',sans-serif; font-size:16px; color:var(--dark); font-weight:600; min-width:0; width:100%; }
         .od-input::placeholder { color:rgba(160,82,45,.38); font-weight:400; }
         .od-input-glow { position:absolute; bottom:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--crimson),transparent); transform:scaleX(0); transition:transform .3s; }
         .od-input-wrap.focused .od-input-glow { transform:scaleX(1); }
         .od-input-check { position:absolute; right:12px; top:50%; transform:translateY(-50%) scale(.5); width:21px; height:21px; background:linear-gradient(135deg,var(--crimson),var(--saffron)); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; opacity:0; transition:opacity .25s,transform .25s; }
         .od-input-wrap.filled .od-input-check { opacity:1; transform:translateY(-50%) scale(1); }
 
-        .od-submit { width:100%; padding:16px 24px; background:linear-gradient(135deg,var(--crimson) 0%,var(--saffron) 50%,var(--gold) 100%); background-size:200% auto; color:#fff; border:none; border-radius:13px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:900; letter-spacing:2px; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 8px 26px rgba(200,0,26,.3); transition:all .4s ease; position:relative; overflow:hidden; margin-bottom:18px; }
+        .od-submit { width:100%; padding:16px 24px; background:linear-gradient(135deg,var(--crimson) 0%,var(--saffron) 50%,var(--gold) 100%); background-size:200% auto; color:#fff; border:none; border-radius:13px; font-family:'Inter',sans-serif; font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 8px 26px rgba(200,0,26,.3); transition:all .4s ease; position:relative; overflow:hidden; margin-bottom:18px; }
         .od-submit:hover { background-position:right center; transform:translateY(-2px); box-shadow:0 16px 42px rgba(200,0,26,.42); }
         .od-submit:disabled { opacity:.7; cursor:not-allowed; transform:none; }
         .od-submit-shine { position:absolute; inset:0; background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent); transform:translateX(-100%); }
@@ -457,9 +456,9 @@ export default function CustomerDetails() {
         .od-loading-row { width:100%; display:flex; align-items:center; justify-content:center; gap:12px; padding:16px 24px; background:linear-gradient(135deg,var(--crimson),var(--saffron)); border-radius:13px; margin-bottom:18px; }
         .od-spinner { width:22px; height:22px; border:2.5px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite; flex-shrink:0; }
         @keyframes spin { to{transform:rotate(360deg)} }
-        .od-loading-txt { font-family:'Dancing Script',cursive; font-size:15px; color:rgba(255,255,255,.85); font-weight:700; }
+        .od-loading-txt { font-family:'Inter',sans-serif; font-size:14px; color:rgba(255,255,255,.9); font-weight:600; }
 
-        .od-token-badge { position:absolute; bottom:18px; right:18px; display:flex; align-items:center; gap:6px; background:rgba(5,28,15,.92); border:1px solid rgba(74,222,128,.3); padding:7px 13px; border-radius:50px; font-family:'Nunito',sans-serif; font-size:11px; color:#4ADE80; font-weight:700; backdrop-filter:blur(12px); animation:badgeIn .5s 1s both; }
+        .od-token-badge { position:absolute; bottom:18px; right:18px; display:flex; align-items:center; gap:6px; background:rgba(5,28,15,.92); border:1px solid rgba(74,222,128,.3); padding:7px 13px; border-radius:50px; font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#4ADE80; font-weight:600; backdrop-filter:blur(12px); animation:badgeIn .5s 1s both; }
         @keyframes badgeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 
         .od-footnote { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; }
@@ -470,9 +469,9 @@ export default function CustomerDetails() {
         .od-fdot { display:block; width:5px; height:5px; background:rgba(200,0,26,.25); border-radius:50%; animation:dPulse 2.2s ease-in-out infinite; }
         @keyframes dPulse { 0%,100%{opacity:.3;transform:scale(1)} 50%{opacity:1;transform:scale(1.5)} }
 
-        .od-watermark { position:absolute; bottom:14px; right:14px; font-family:'Dancing Script',cursive; font-size:12px; color:rgba(160,82,45,.15); pointer-events:none; user-select:none; }
+        .od-watermark { position:absolute; bottom:14px; right:14px; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px; color:rgba(160,82,45,.25); pointer-events:none; user-select:none; }
 
-        .od-toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); padding:14px 22px; border-radius:13px; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; z-index:10000; display:flex; align-items:center; gap:10px; animation:toastIn .4s cubic-bezier(.16,1,.3,1); backdrop-filter:blur(20px); border:1px solid; white-space:nowrap; }
+        .od-toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); padding:14px 22px; border-radius:13px; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; z-index:10000; display:flex; align-items:center; gap:10px; animation:toastIn .4s cubic-bezier(.16,1,.3,1); backdrop-filter:blur(20px); border:1px solid; white-space:nowrap; max-width:90vw; }
         .od-toast-err { background:rgba(45,8,15,.95); color:#FF6B6B; border-color:rgba(255,107,107,.3); }
         .od-toast-ok { background:rgba(5,28,15,.95); color:#4ADE80; border-color:rgba(74,222,128,.3); }
         @keyframes toastIn { from{opacity:0;transform:translate(-50%,-16px)} to{opacity:1;transform:translate(-50%,0)} }
